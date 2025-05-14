@@ -1,7 +1,6 @@
 import Note from '@/components/Note'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { createCommentDraftEvent, createShortTextNoteDraftEvent } from '@/lib/draft-event'
 import { useNostr } from '@/providers/NostrProvider'
@@ -10,10 +9,9 @@ import { ChevronDown, ImageUp, LoaderCircle } from 'lucide-react'
 import { Event, kinds } from 'nostr-tools'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import PostTextarea from '../PostTextarea'
+import NewPostTextarea from '../NewPostTextarea'
 import Mentions from './Mentions'
 import PostOptions from './PostOptions'
-import Preview from './Preview'
 import SendOnlyToSwitch from './SendOnlyToSwitch'
 import Uploader from './Uploader'
 import { preprocessContent } from './utils'
@@ -39,7 +37,7 @@ export default function NormalPostContent({
   const [specifiedRelayUrls, setSpecifiedRelayUrls] = useState<string[] | undefined>(undefined)
   const [uploadingPicture, setUploadingPicture] = useState(false)
   const [mentions, setMentions] = useState<string[]>([])
-  const [cursorOffset, setCursorOffset] = useState(0)
+  // const [cursorOffset, setCursorOffset] = useState(0)
   const initializedRef = useRef(false)
   const canPost = !!content && !posting
 
@@ -49,9 +47,9 @@ export default function NormalPostContent({
       setContent(cached.content || '')
       setPictureInfos(cached.pictureInfos || [])
     }
-    if (defaultContent) {
-      setCursorOffset(defaultContent.length)
-    }
+    // if (defaultContent) {
+    //   setCursorOffset(defaultContent.length)
+    // }
     setTimeout(() => {
       initializedRef.current = true
     }, 100)
@@ -124,7 +122,7 @@ export default function NormalPostContent({
           </div>
         </ScrollArea>
       )}
-      <Tabs defaultValue="edit" className="space-y-4">
+      {/* <Tabs defaultValue="edit" className="space-y-4">
         <TabsList>
           <TabsTrigger value="edit">{t('Edit')}</TabsTrigger>
           <TabsTrigger value="preview">{t('Preview')}</TabsTrigger>
@@ -142,11 +140,13 @@ export default function NormalPostContent({
               setPictureInfos((prev) => [...prev, { url, tags }])
             }}
           />
+          <NewPostTextarea />
         </TabsContent>
         <TabsContent value="preview">
           <Preview content={processedContent} />
         </TabsContent>
-      </Tabs>
+      </Tabs> */}
+      <NewPostTextarea />
       <SendOnlyToSwitch
         parentEvent={parentEvent}
         specifiedRelayUrls={specifiedRelayUrls}
