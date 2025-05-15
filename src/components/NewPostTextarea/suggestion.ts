@@ -1,3 +1,4 @@
+import client from '@/services/client.service'
 import type { Editor } from '@tiptap/core'
 import { ReactRenderer } from '@tiptap/react'
 import { SuggestionKeyDownProps } from '@tiptap/suggestion'
@@ -5,36 +6,8 @@ import tippy, { GetReferenceClientRect, Instance, Props } from 'tippy.js'
 import MentionList, { MentionListHandle, MentionListProps } from './MentionList'
 
 const suggestion = {
-  items: ({ query }: { query: string }): string[] => {
-    return [
-      'Lea Thompson',
-      'Cyndi Lauper',
-      'Tom Cruise',
-      'Madonna',
-      'Jerry Hall',
-      'Joan Collins',
-      'Winona Ryder',
-      'Christina Applegate',
-      'Alyssa Milano',
-      'Molly Ringwald',
-      'Ally Sheedy',
-      'Debbie Harry',
-      'Olivia Newton-John',
-      'Elton John',
-      'Michael J. Fox',
-      'Axl Rose',
-      'Emilio Estevez',
-      'Ralph Macchio',
-      'Rob Lowe',
-      'Jennifer Grey',
-      'Mickey Rourke',
-      'John Cusack',
-      'Matthew Broderick',
-      'Justine Bateman',
-      'Lisa Bonet'
-    ]
-      .filter((item) => item.toLowerCase().startsWith(query.toLowerCase()))
-      .slice(0, 5)
+  items: async ({ query }: { query: string }) => {
+    return await client.searchProfilesFromIndex(query, 20)
   },
 
   render: () => {

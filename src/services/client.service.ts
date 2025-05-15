@@ -1,6 +1,6 @@
 import { BIG_RELAY_URLS, ExtendedKind } from '@/constants'
 import { getProfileFromProfileEvent, getRelayListFromRelayListEvent } from '@/lib/event'
-import { formatPubkey, userIdToPubkey } from '@/lib/pubkey'
+import { formatPubkey, pubkeyToNpub, userIdToPubkey } from '@/lib/pubkey'
 import { extractPubkeysFromEventTags } from '@/lib/tag'
 import { isLocalNetworkUrl, isWebsocketUrl, normalizeUrl } from '@/lib/url'
 import { ISigner, TProfile, TRelayList } from '@/types'
@@ -691,7 +691,7 @@ class ClientService extends EventTarget {
 
     try {
       const pubkey = userIdToPubkey(id)
-      return { pubkey, username: formatPubkey(pubkey) }
+      return { pubkey, npub: pubkeyToNpub(pubkey) ?? '', username: formatPubkey(pubkey) }
     } catch {
       return undefined
     }

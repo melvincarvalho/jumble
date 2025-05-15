@@ -4,7 +4,7 @@ import { TEmoji, TImageInfo, TRelayList, TRelaySet } from '@/types'
 import { LRUCache } from 'lru-cache'
 import { Event, kinds, nip19 } from 'nostr-tools'
 import { getAmountFromInvoice, getLightningAddressFromProfile } from './lightning'
-import { formatPubkey } from './pubkey'
+import { formatPubkey, pubkeyToNpub } from './pubkey'
 import {
   extractImageInfoFromTag,
   generateEventIdFromETag,
@@ -174,6 +174,7 @@ export function getProfileFromProfileEvent(event: Event) {
       profileObj.nip05?.split('@')[0]?.trim()
     return {
       pubkey: event.pubkey,
+      npub: pubkeyToNpub(event.pubkey) ?? '',
       banner: profileObj.banner,
       avatar: profileObj.picture,
       username: username || formatPubkey(event.pubkey),
@@ -190,6 +191,7 @@ export function getProfileFromProfileEvent(event: Event) {
     console.error(err)
     return {
       pubkey: event.pubkey,
+      npub: pubkeyToNpub(event.pubkey) ?? '',
       username: formatPubkey(event.pubkey)
     }
   }

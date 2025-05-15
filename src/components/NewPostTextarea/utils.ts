@@ -20,16 +20,7 @@ export function parseEditorJsonToText(node: JSONContent): string {
     case 'paragraph':
       return '\n'
     case 'mention':
-      return `@${node.attrs?.id}`
-    // case 'hardBreak':
-    //   return '\n';
-    // case 'heading':
-    //   return '#'.repeat(node.attrs?.level || 1) + ' ' + parseTiptapJsonToText(node) + '\n';
-    // case 'bulletList':
-    // case 'orderedList':
-    //   return parseTiptapJsonToText(node);
-    // case 'listItem':
-    //   return '- ' + parseTiptapJsonToText(node) + '\n';
+      return node.attrs ? `nostr:${node.attrs.id}` : ''
     default:
       return ''
   }

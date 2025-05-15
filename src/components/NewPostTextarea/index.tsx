@@ -27,7 +27,7 @@ export default function NewPostTextarea() {
     ],
     editorProps: {
       attributes: {
-        class: 'border rounded-lg p-4 h-52'
+        class: 'border rounded-lg p-3 h-52'
       }
     },
     content: '',
