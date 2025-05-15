@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Document from '@tiptap/extension-document'
 import Mention from '@tiptap/extension-mention'
 import Paragraph from '@tiptap/extension-paragraph'
+import Placeholder from '@tiptap/extension-placeholder'
 import Text from '@tiptap/extension-text'
 import { EditorContent, useEditor } from '@tiptap/react'
 import { useMemo, useState } from 'react'
@@ -18,6 +19,9 @@ export default function NewPostTextarea() {
       Document,
       Paragraph,
       Text,
+      Placeholder.configure({
+        placeholder: t('Write something...') + ' (' + t('Paste or drop media files to upload') + ')'
+      }),
       Mention.configure({
         HTMLAttributes: {
           class: 'text-primary bg-primary/10 rounded-md px-1'
@@ -48,7 +52,7 @@ export default function NewPostTextarea() {
         <TabsTrigger value="preview">{t('Preview')}</TabsTrigger>
       </TabsList>
       <TabsContent value="edit">
-        <EditorContent editor={editor} />
+        <EditorContent className="tiptap" editor={editor} />
       </TabsContent>
       <TabsContent value="preview">
         <Preview content={processedContent} />
