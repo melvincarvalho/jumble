@@ -24,14 +24,15 @@ export default function NewPostTextarea() {
       }),
       Mention.configure({
         HTMLAttributes: {
-          class: 'text-primary bg-primary/10 rounded-md px-1'
+          class: 'text-primary'
         },
         suggestion
       })
     ],
     editorProps: {
       attributes: {
-        class: 'border rounded-lg p-3 h-52'
+        class:
+          'border rounded-lg p-3 min-h-52 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
       }
     },
     content: '',
