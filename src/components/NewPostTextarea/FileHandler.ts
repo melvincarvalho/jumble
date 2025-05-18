@@ -20,11 +20,11 @@ export const FileHandler = Extension.create({
             dragover(view, event) {
               event.preventDefault()
               view.dom.classList.add(...DRAGOVER_CLASS_LIST)
-              return true
+              return false
             },
             dragleave(view) {
               view.dom.classList.remove(...DRAGOVER_CLASS_LIST)
-              return true
+              return false
             },
             drop(view, event) {
               event.preventDefault()
@@ -34,7 +34,7 @@ export const FileHandler = Extension.create({
               const mediaFile = items.find(
                 (item) => item.type.includes('image') || item.type.includes('video')
               )
-              if (!mediaFile) return true
+              if (!mediaFile) return false
 
               uploadFile(view, mediaFile)
 
