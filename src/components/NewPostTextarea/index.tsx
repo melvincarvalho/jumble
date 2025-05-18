@@ -12,7 +12,7 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import { Event } from 'nostr-tools'
 import { Dispatch, forwardRef, SetStateAction, useImperativeHandle } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HandlePaste } from './HandlePast'
+import { FileHandler } from './FileHandler'
 import Preview from './Preview'
 import suggestion from './suggestion'
 
@@ -45,7 +45,7 @@ const NewPostTextarea = forwardRef<
         },
         suggestion
       }),
-      HandlePaste
+      FileHandler
     ],
     editorProps: {
       attributes: {
