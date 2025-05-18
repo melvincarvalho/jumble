@@ -16,7 +16,7 @@ import {
 import { useScreenSize } from '@/providers/ScreenSizeProvider'
 import { Event } from 'nostr-tools'
 import { Dispatch, useMemo } from 'react'
-import NormalPostContent from './NormalPostContent'
+import PostContent from './PostContent'
 import Title from './Title'
 
 export default function PostEditor({
@@ -34,7 +34,7 @@ export default function PostEditor({
 
   const content = useMemo(() => {
     return (
-      <NormalPostContent
+      <PostContent
         defaultContent={defaultContent}
         parentEvent={parentEvent}
         close={() => setOpen(false)}

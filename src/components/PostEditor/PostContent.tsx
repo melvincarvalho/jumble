@@ -7,16 +7,15 @@ import { useNostr } from '@/providers/NostrProvider'
 import postContentCache from '@/services/post-content-cache.service'
 import { ChevronDown, ImageUp, LoaderCircle } from 'lucide-react'
 import { Event, kinds } from 'nostr-tools'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import NewPostTextarea from '../NewPostTextarea'
+import NewPostTextarea, { TNewPostTextareaHandle } from '../NewPostTextarea'
 import Mentions from './Mentions'
 import PostOptions from './PostOptions'
 import SendOnlyToSwitch from './SendOnlyToSwitch'
 import Uploader from './Uploader'
-import { preprocessContent } from './utils'
 
-export default function NormalPostContent({
+export default function PostContent({
   defaultContent = '',
   parentEvent,
   close
@@ -28,38 +27,15 @@ export default function NormalPostContent({
   const { t } = useTranslation()
   const { toast } = useToast()
   const { publish, checkLogin } = useNostr()
-  const [content, setContent] = useState('')
-  const [processedContent, setProcessedContent] = useState('')
-  const [pictureInfos, setPictureInfos] = useState<{ url: string; tags: string[][] }[]>([])
+  const [text, setText] = useState('')
+  const textareaRef = useRef<TNewPostTextareaHandle>(null)
   const [posting, setPosting] = useState(false)
   const [showMoreOptions, setShowMoreOptions] = useState(false)
   const [addClientTag, setAddClientTag] = useState(false)
   const [specifiedRelayUrls, setSpecifiedRelayUrls] = useState<string[] | undefined>(undefined)
   const [uploadingPicture, setUploadingPicture] = useState(false)
   const [mentions, setMentions] = useState<string[]>([])
-  // const [cursorOffset, setCursorOffset] = useState(0)
-  const initializedRef = useRef(false)
-  const canPost = !!content && !posting
-
-  useEffect(() => {
-    const cached = postContentCache.getNormalPostCache({ defaultContent, parentEvent })
-    if (cached) {
-      setContent(cached.content || '')
-      setPictureInfos(cached.pictureInfos || [])
-    }
-    // if (defaultContent) {
-    //   setCursorOffset(defaultContent.length)
-    // }
-    setTimeout(() => {
-      initializedRef.current = true
-    }, 100)
-  }, [defaultContent, parentEvent])
-
-  useEffect(() => {
-    setProcessedContent(preprocessContent(content))
-    if (!initializedRef.current) return
-    postContentCache.setNormalPostCache({ defaultContent, parentEvent }, content, pictureInfos)
-  }, [content, pictureInfos])
+  const canPost = !!text && !posting
 
   const post = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -73,17 +49,17 @@ export default function NormalPostContent({
       try {
         const draftEvent =
           parentEvent && parentEvent.kind !== kinds.ShortTextNote
-            ? await createCommentDraftEvent(processedContent, parentEvent, pictureInfos, mentions, {
+            ? await createCommentDraftEvent(text, parentEvent, mentions, {
                 addClientTag,
                 protectedEvent: !!specifiedRelayUrls
               })
-            : await createShortTextNoteDraftEvent(processedContent, pictureInfos, mentions, {
+            : await createShortTextNoteDraftEvent(text, mentions, {
                 parentEvent,
                 addClientTag,
                 protectedEvent: !!specifiedRelayUrls
               })
         await publish(draftEvent, { specifiedRelayUrls })
-        setContent('')
+        postContentCache.clearPostCache({ defaultContent, parentEvent })
         close()
       } catch (error) {
         if (error instanceof AggregateError) {
@@ -122,31 +98,13 @@ export default function NormalPostContent({
           </div>
         </ScrollArea>
       )}
-      {/* <Tabs defaultValue="edit" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="edit">{t('Edit')}</TabsTrigger>
-          <TabsTrigger value="preview">{t('Preview')}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="edit">
-          <PostTextarea
-            className="h-52"
-            setTextValue={setContent}
-            textValue={content}
-            placeholder={
-              t('Write something...') + ' (' + t('Paste or drop media files to upload') + ')'
-            }
-            cursorOffset={cursorOffset}
-            onUploadImage={({ url, tags }) => {
-              setPictureInfos((prev) => [...prev, { url, tags }])
-            }}
-          />
-          <NewPostTextarea />
-        </TabsContent>
-        <TabsContent value="preview">
-          <Preview content={processedContent} />
-        </TabsContent>
-      </Tabs> */}
-      <NewPostTextarea />
+      <NewPostTextarea
+        ref={textareaRef}
+        text={text}
+        setText={setText}
+        defaultContent={defaultContent}
+        parentEvent={parentEvent}
+      />
       <SendOnlyToSwitch
         parentEvent={parentEvent}
         specifiedRelayUrls={specifiedRelayUrls}
@@ -155,9 +113,8 @@ export default function NormalPostContent({
       <div className="flex items-center justify-between">
         <div className="flex gap-2 items-center">
           <Uploader
-            onUploadSuccess={({ url, tags }) => {
-              setPictureInfos((prev) => [...prev, { url, tags }])
-              setContent((prev) => (prev === '' ? url : `${prev}\n${url}`))
+            onUploadSuccess={({ url }) => {
+              textareaRef.current?.appendText(url)
             }}
             onUploadingChange={setUploadingPicture}
             accept="image/*,video/*,audio/*"
@@ -179,7 +136,7 @@ export default function NormalPostContent({
         </div>
         <div className="flex gap-2 items-center">
           <Mentions
-            content={processedContent}
+            content={text}
             parentEvent={parentEvent}
             mentions={mentions}
             setMentions={setMentions}

@@ -1,24 +1,41 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { parseEditorJsonToText } from '@/lib/tiptap'
+import postContentCache from '@/services/post-content-cache.service'
 import Document from '@tiptap/extension-document'
+import History from '@tiptap/extension-history'
 import Mention from '@tiptap/extension-mention'
 import Paragraph from '@tiptap/extension-paragraph'
 import Placeholder from '@tiptap/extension-placeholder'
 import Text from '@tiptap/extension-text'
+import { TextSelection } from '@tiptap/pm/state'
 import { EditorContent, useEditor } from '@tiptap/react'
-import { useMemo, useState } from 'react'
+import { Event } from 'nostr-tools'
+import { Dispatch, forwardRef, SetStateAction, useImperativeHandle } from 'react'
 import { useTranslation } from 'react-i18next'
+import { HandlePaste } from './HandlePast'
 import Preview from './Preview'
 import suggestion from './suggestion'
-import { parseEditorJsonToText, preprocessContent } from './utils'
 
-export default function NewPostTextarea() {
+export type TNewPostTextareaHandle = {
+  appendText: (text: string) => void
+}
+
+const NewPostTextarea = forwardRef<
+  TNewPostTextareaHandle,
+  {
+    text: string
+    setText: Dispatch<SetStateAction<string>>
+    defaultContent?: string
+    parentEvent?: Event
+  }
+>(({ text = '', setText, defaultContent, parentEvent }, ref) => {
   const { t } = useTranslation()
-  const [text, setText] = useState('')
   const editor = useEditor({
     extensions: [
       Document,
       Paragraph,
       Text,
+      History,
       Placeholder.configure({
         placeholder: t('Write something...') + ' (' + t('Paste or drop media files to upload') + ')'
       }),
@@ -27,7 +44,8 @@ export default function NewPostTextarea() {
           class: 'text-primary'
         },
         suggestion
-      })
+      }),
+      HandlePaste
     ],
     editorProps: {
       attributes: {
@@ -35,12 +53,36 @@ export default function NewPostTextarea() {
           'border rounded-lg p-3 min-h-52 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
       }
     },
-    content: '',
+    content: postContentCache.getPostCache({ defaultContent, parentEvent }),
     onUpdate(props) {
+      setText(parseEditorJsonToText(props.editor.getJSON()))
+      postContentCache.setPostCache({ defaultContent, parentEvent }, props.editor.getJSON())
+    },
+    onCreate(props) {
       setText(parseEditorJsonToText(props.editor.getJSON()))
     }
   })
-  const processedContent = useMemo(() => preprocessContent(text), [text])
+
+  useImperativeHandle(ref, () => ({
+    appendText: (text: string) => {
+      if (editor) {
+        editor
+          .chain()
+          .focus()
+          .command(({ tr, dispatch }) => {
+            if (dispatch) {
+              const endPos = tr.doc.content.size
+              const selection = TextSelection.create(tr.doc, endPos)
+              tr.setSelection(selection)
+              dispatch(tr)
+            }
+            return true
+          })
+          .insertContent(text)
+          .run()
+      }
+    }
+  }))
 
   if (!editor) {
     return null
@@ -56,8 +98,10 @@ export default function NewPostTextarea() {
         <EditorContent className="tiptap" editor={editor} />
       </TabsContent>
       <TabsContent value="preview">
-        <Preview content={processedContent} />
+        <Preview content={text} />
       </TabsContent>
     </Tabs>
   )
-}
+})
+NewPostTextarea.displayName = 'NewPostTextarea'
+export default NewPostTextarea
