@@ -1,5 +1,5 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { userIdToPubkey } from '@/lib/pubkey'
+import { formatNpub, userIdToPubkey } from '@/lib/pubkey'
 import { cn } from '@/lib/utils'
 import { SuggestionKeyDownProps } from '@tiptap/suggestion'
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
@@ -23,7 +23,7 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>((props, ref)
     const item = props.items[index]
 
     if (item) {
-      props.command({ id: item })
+      props.command({ id: item, label: formatNpub(item) })
     }
   }
 
