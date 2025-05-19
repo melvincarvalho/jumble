@@ -2,6 +2,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { Skeleton } from '@/components/ui/skeleton'
 import { useFetchProfile } from '@/hooks'
 import { toProfile } from '@/lib/link'
+import { formatUserId } from '@/lib/pubkey'
 import { cn } from '@/lib/utils'
 import { SecondaryPageLink } from '@/PageManager'
 import ProfileCard from '../ProfileCard'
@@ -20,7 +21,15 @@ export default function Username({
   withoutSkeleton?: boolean
 }) {
   const { profile } = useFetchProfile(userId)
-  if (!profile && !withoutSkeleton) {
+  if (!profile) {
+    if (withoutSkeleton) {
+      return (
+        <div className={className}>
+          {showAt && '@'}
+          {formatUserId(userId)}
+        </div>
+      )
+    }
     return (
       <div className="py-1">
         <Skeleton className={cn('w-16', skeletonClassName)} />
@@ -66,7 +75,15 @@ export function SimpleUsername({
   withoutSkeleton?: boolean
 }) {
   const { profile } = useFetchProfile(userId)
-  if (!profile && !withoutSkeleton) {
+  if (!profile) {
+    if (withoutSkeleton) {
+      return (
+        <div className={className}>
+          {showAt && '@'}
+          {formatUserId(userId)}
+        </div>
+      )
+    }
     return (
       <div className="py-1">
         <Skeleton className={cn('w-16', skeletonClassName)} />

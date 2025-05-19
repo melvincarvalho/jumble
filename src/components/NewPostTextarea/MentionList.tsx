@@ -1,6 +1,6 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { userIdToPubkey } from '@/lib/pubkey'
 import { cn } from '@/lib/utils'
-import { TProfile } from '@/types'
 import { SuggestionKeyDownProps } from '@tiptap/suggestion'
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
 import Nip05 from '../Nip05'
@@ -8,7 +8,7 @@ import { SimpleUserAvatar } from '../UserAvatar'
 import { SimpleUsername } from '../Username'
 
 export interface MentionListProps {
-  items: TProfile[]
+  items: string[]
   command: (payload: { id: string; label?: string }) => void
 }
 
@@ -23,7 +23,7 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>((props, ref)
     const item = props.items[index]
 
     if (item) {
-      props.command({ id: item.npub, label: item.username })
+      props.command({ id: item })
     }
   }
 
@@ -80,14 +80,14 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>((props, ref)
             'cursor-pointer text-start items-center m-1 p-2 outline-none transition-colors hover:bg-accent hover:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 rounded-md',
             selectedIndex === index && 'bg-accent text-accent-foreground'
           )}
-          key={item.pubkey}
+          key={item}
           onClick={() => selectItem(index)}
         >
           <div className="flex gap-2 w-80 items-center truncate pointer-events-none">
-            <SimpleUserAvatar userId={item.pubkey} />
+            <SimpleUserAvatar userId={item} />
             <div className="flex-1 w-0">
-              <SimpleUsername userId={item.pubkey} className="font-semibold truncate" />
-              <Nip05 pubkey={item.pubkey} />
+              <SimpleUsername userId={item} className="font-semibold truncate" />
+              <Nip05 pubkey={userIdToPubkey(item)} />
             </div>
           </div>
         </button>

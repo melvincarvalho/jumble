@@ -40,9 +40,6 @@ const NewPostTextarea = forwardRef<
         placeholder: t('Write something...') + ' (' + t('Paste or drop media files to upload') + ')'
       }),
       CustomMention.configure({
-        HTMLAttributes: {
-          class: 'text-primary'
-        },
         suggestion
       }),
       FileHandler

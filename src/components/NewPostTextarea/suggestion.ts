@@ -7,7 +7,7 @@ import MentionList, { MentionListHandle, MentionListProps } from './MentionList'
 
 const suggestion = {
   items: async ({ query }: { query: string }) => {
-    return await client.searchProfilesFromIndex(query, 20)
+    return await client.searchNpubs(query, 20)
   },
 
   render: () => {
