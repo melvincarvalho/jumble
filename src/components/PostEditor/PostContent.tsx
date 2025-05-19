@@ -9,7 +9,7 @@ import { ChevronDown, ImageUp, LoaderCircle } from 'lucide-react'
 import { Event, kinds } from 'nostr-tools'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import NewPostTextarea, { TNewPostTextareaHandle } from '../NewPostTextarea'
+import PostTextarea, { TPostTextareaHandle } from '../PostTextarea'
 import Mentions from './Mentions'
 import PostOptions from './PostOptions'
 import SendOnlyToSwitch from './SendOnlyToSwitch'
@@ -28,7 +28,7 @@ export default function PostContent({
   const { toast } = useToast()
   const { publish, checkLogin } = useNostr()
   const [text, setText] = useState('')
-  const textareaRef = useRef<TNewPostTextareaHandle>(null)
+  const textareaRef = useRef<TPostTextareaHandle>(null)
   const [posting, setPosting] = useState(false)
   const [showMoreOptions, setShowMoreOptions] = useState(false)
   const [addClientTag, setAddClientTag] = useState(false)
@@ -98,7 +98,7 @@ export default function PostContent({
           </div>
         </ScrollArea>
       )}
-      <NewPostTextarea
+      <PostTextarea
         ref={textareaRef}
         text={text}
         setText={setText}

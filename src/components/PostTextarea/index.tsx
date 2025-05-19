@@ -16,12 +16,12 @@ import { FileHandler } from './FileHandler'
 import Preview from './Preview'
 import suggestion from './suggestion'
 
-export type TNewPostTextareaHandle = {
+export type TPostTextareaHandle = {
   appendText: (text: string) => void
 }
 
-const NewPostTextarea = forwardRef<
-  TNewPostTextareaHandle,
+const PostTextarea = forwardRef<
+  TPostTextareaHandle,
   {
     text: string
     setText: Dispatch<SetStateAction<string>>
@@ -100,5 +100,5 @@ const NewPostTextarea = forwardRef<
     </Tabs>
   )
 })
-NewPostTextarea.displayName = 'NewPostTextarea'
-export default NewPostTextarea
+PostTextarea.displayName = 'PostTextarea'
+export default PostTextarea
