@@ -3,7 +3,6 @@ import { parseEditorJsonToText } from '@/lib/tiptap'
 import postContentCache from '@/services/post-content-cache.service'
 import Document from '@tiptap/extension-document'
 import History from '@tiptap/extension-history'
-import Mention from '@tiptap/extension-mention'
 import Paragraph from '@tiptap/extension-paragraph'
 import Placeholder from '@tiptap/extension-placeholder'
 import Text from '@tiptap/extension-text'
@@ -12,7 +11,7 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import { Event } from 'nostr-tools'
 import { Dispatch, forwardRef, SetStateAction, useImperativeHandle } from 'react'
 import { useTranslation } from 'react-i18next'
-import AutoMention from './AutoMention'
+import CustomMention from './CustomMention'
 import { FileHandler } from './FileHandler'
 import Preview from './Preview'
 import suggestion from './suggestion'
@@ -40,14 +39,13 @@ const NewPostTextarea = forwardRef<
       Placeholder.configure({
         placeholder: t('Write something...') + ' (' + t('Paste or drop media files to upload') + ')'
       }),
-      Mention.configure({
+      CustomMention.configure({
         HTMLAttributes: {
           class: 'text-primary'
         },
         suggestion
       }),
-      FileHandler,
-      AutoMention
+      FileHandler
     ],
     editorProps: {
       attributes: {
