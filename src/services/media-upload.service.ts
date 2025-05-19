@@ -8,6 +8,7 @@ import storage from './local-storage.service'
 class MediaUploadService {
   static instance: MediaUploadService
 
+  private service: string = storage.getMediaUploadService()
   private serviceUploadUrlMap = new Map<string, string | undefined>()
   private imetaTagMap = new Map<string, string[]>()
 
@@ -18,24 +19,32 @@ class MediaUploadService {
     return MediaUploadService.instance
   }
 
+  getService() {
+    return this.service
+  }
+
+  setService(service: string) {
+    this.service = service
+    storage.setMediaUploadService(service)
+  }
+
   async upload(file: File) {
-    const service = storage.getMediaUploadService()
-    let uploadUrl = this.serviceUploadUrlMap.get(service)
+    let uploadUrl = this.serviceUploadUrlMap.get(this.service)
     if (!uploadUrl) {
-      const response = await fetch(`${service}/.well-known/nostr/nip96.json`)
+      const response = await fetch(`${this.service}/.well-known/nostr/nip96.json`)
       if (!response.ok) {
         throw new Error(
-          `${simplifyUrl(service)} does not work, please try another service in your settings`
+          `${simplifyUrl(this.service)} does not work, please try another service in your settings`
         )
       }
       const data = await response.json()
       uploadUrl = data?.api_url
       if (!uploadUrl) {
         throw new Error(
-          `${simplifyUrl(service)} does not work, please try another service in your settings`
+          `${simplifyUrl(this.service)} does not work, please try another service in your settings`
         )
       }
-      this.serviceUploadUrlMap.set(service, uploadUrl)
+      this.serviceUploadUrlMap.set(this.service, uploadUrl)
     }
 
     const formData = new FormData()
