@@ -13,6 +13,20 @@ const suggestion = {
   render: () => {
     let component: ReactRenderer<MentionListHandle, MentionListProps>
     let popup: Instance[]
+    let isPopupVisible = false
+    const escapeListener = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isPopupVisible) {
+        e.preventDefault()
+        e.stopPropagation()
+
+        if (popup && popup[0]) {
+          popup[0].hide()
+        }
+
+        return false
+      }
+    }
+    document.addEventListener('keydown', escapeListener, true)
 
     return {
       onStart: (props: { editor: Editor; clientRect?: (() => DOMRect | null) | null }) => {
@@ -32,7 +46,13 @@ const suggestion = {
           showOnCreate: true,
           interactive: true,
           trigger: 'manual',
-          placement: 'bottom-start'
+          placement: 'bottom-start',
+          onShow() {
+            isPopupVisible = true
+          },
+          onHide() {
+            isPopupVisible = false
+          }
         })
       },
 
@@ -57,6 +77,7 @@ const suggestion = {
       },
 
       onExit() {
+        isPopupVisible = false
         popup[0].destroy()
         component.destroy()
       }
