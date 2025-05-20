@@ -1,4 +1,5 @@
 import client from '@/services/client.service'
+import postEditor from '@/services/post-editor.service'
 import type { Editor } from '@tiptap/core'
 import { ReactRenderer } from '@tiptap/react'
 import { SuggestionKeyDownProps } from '@tiptap/suggestion'
@@ -13,22 +14,29 @@ const suggestion = {
   render: () => {
     let component: ReactRenderer<MentionListHandle, MentionListProps>
     let popup: Instance[]
-    let isPopupVisible = false
-    const escapeListener = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isPopupVisible) {
-        e.preventDefault()
-        e.stopPropagation()
-
-        if (popup && popup[0]) {
-          popup[0].hide()
-        }
-
-        return false
-      }
-    }
-    document.addEventListener('keydown', escapeListener, true)
+    let touchListener: (e: TouchEvent) => void
+    let closePopup: () => void
 
     return {
+      onBeforeStart: () => {
+        touchListener = (e: TouchEvent) => {
+          if (popup && popup[0] && postEditor.isSuggestionPopupOpen) {
+            const popupElement = popup[0].popper
+            if (popupElement && !popupElement.contains(e.target as Node)) {
+              popup[0].hide()
+            }
+          }
+        }
+        document.addEventListener('touchstart', touchListener)
+
+        closePopup = () => {
+          console.log('closePopup')
+          if (popup && popup[0]) {
+            popup[0].hide()
+          }
+        }
+        postEditor.addEventListener('closeSuggestionPopup', closePopup)
+      },
       onStart: (props: { editor: Editor; clientRect?: (() => DOMRect | null) | null }) => {
         component = new ReactRenderer(MentionList, {
           props,
@@ -47,11 +55,13 @@ const suggestion = {
           interactive: true,
           trigger: 'manual',
           placement: 'bottom-start',
+          hideOnClick: true,
+          touch: true,
           onShow() {
-            isPopupVisible = true
+            postEditor.isSuggestionPopupOpen = true
           },
           onHide() {
-            isPopupVisible = false
+            postEditor.isSuggestionPopupOpen = false
           }
         })
       },
@@ -77,9 +87,12 @@ const suggestion = {
       },
 
       onExit() {
-        isPopupVisible = false
+        postEditor.isSuggestionPopupOpen = false
         popup[0].destroy()
         component.destroy()
+
+        document.removeEventListener('touchstart', touchListener)
+        postEditor.removeEventListener('closeSuggestionPopup', closePopup)
       }
     }
   }

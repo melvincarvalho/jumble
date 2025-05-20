@@ -14,6 +14,7 @@ import {
   SheetTitle
 } from '@/components/ui/sheet'
 import { useScreenSize } from '@/providers/ScreenSizeProvider'
+import postEditor from '@/services/post-editor.service'
 import { Event } from 'nostr-tools'
 import { Dispatch, useMemo } from 'react'
 import PostContent from './PostContent'
@@ -45,7 +46,17 @@ export default function PostEditor({
   if (isSmallScreen) {
     return (
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent className="h-full w-full p-0 border-none" side="bottom" hideClose>
+        <SheetContent
+          className="h-full w-full p-0 border-none"
+          side="bottom"
+          hideClose
+          onEscapeKeyDown={(e) => {
+            if (postEditor.isSuggestionPopupOpen) {
+              e.preventDefault()
+              postEditor.closeSuggestionPopup()
+            }
+          }}
+        >
           <ScrollArea className="px-4 h-full max-h-screen">
             <div className="space-y-4 px-2 py-6">
               <SheetHeader>
@@ -64,7 +75,16 @@ export default function PostEditor({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="p-0 max-w-2xl" withoutClose>
+      <DialogContent
+        className="p-0 max-w-2xl"
+        withoutClose
+        onEscapeKeyDown={(e) => {
+          if (postEditor.isSuggestionPopupOpen) {
+            e.preventDefault()
+            postEditor.closeSuggestionPopup()
+          }
+        }}
+      >
         <ScrollArea className="px-4 h-full max-h-screen">
           <div className="space-y-4 px-2 py-6">
             <DialogHeader>
