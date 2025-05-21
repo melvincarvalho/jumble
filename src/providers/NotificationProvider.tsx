@@ -135,6 +135,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const clearNewNotifications = async () => {
     if (!pubkey) return
 
+    // Explicitly close the current subscription before clearing notifications.
+    // This helps prevent a race condition where events from the old subscription
+    // period (using the previous `notificationsSeenAt`) might still be processed
+    // after new IDs are cleared but before the main effect re-subscribes
+    // with the updated timestamp.
+    if (subCloserRef.current) {
+      subCloserRef.current.close()
+      subCloserRef.current = null
+    }
+
     setNewNotificationIds(new Set())
     await updateNotificationsSeenAt()
   }
