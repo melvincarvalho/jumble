@@ -19,7 +19,8 @@ export default function MuteButton({ pubkey }: { pubkey: string }) {
   const { isSmallScreen } = useScreenSize()
   const { toast } = useToast()
   const { pubkey: accountPubkey, checkLogin } = useNostr()
-  const { mutePubkeys, mutePubkeyPrivately, mutePubkeyPublicly, unmutePubkey } = useMuteList()
+  const { mutePubkeys, changing, mutePubkeyPrivately, mutePubkeyPublicly, unmutePubkey } =
+    useMuteList()
   const [updating, setUpdating] = useState(false)
   const isMuted = useMemo(() => mutePubkeys.includes(pubkey), [mutePubkeys, pubkey])
 
@@ -75,7 +76,7 @@ export default function MuteButton({ pubkey }: { pubkey: string }) {
         className="w-20 min-w-20 rounded-full"
         variant="secondary"
         onClick={handleUnmute}
-        disabled={updating}
+        disabled={updating || changing}
       >
         {updating ? <Loader className="animate-spin" /> : t('Unmute')}
       </Button>
@@ -83,7 +84,11 @@ export default function MuteButton({ pubkey }: { pubkey: string }) {
   }
 
   const trigger = (
-    <Button variant="destructive" className="w-20 min-w-20 rounded-full" disabled={updating}>
+    <Button
+      variant="destructive"
+      className="w-20 min-w-20 rounded-full"
+      disabled={updating || changing}
+    >
       {updating ? <Loader className="animate-spin" /> : t('Mute')}
     </Button>
   )
@@ -98,7 +103,7 @@ export default function MuteButton({ pubkey }: { pubkey: string }) {
               className="w-full p-6 justify-start text-destructive text-lg gap-4 [&_svg]:size-5 focus:text-destructive"
               variant="ghost"
               onClick={(e) => handleMute(e, true)}
-              disabled={updating}
+              disabled={updating || changing}
             >
               {updating ? <Loader className="animate-spin" /> : t('Mute user privately')}
             </Button>
@@ -106,7 +111,7 @@ export default function MuteButton({ pubkey }: { pubkey: string }) {
               className="w-full p-6 justify-start text-destructive text-lg gap-4 [&_svg]:size-5 focus:text-destructive"
               variant="ghost"
               onClick={(e) => handleMute(e, false)}
-              disabled={updating}
+              disabled={updating || changing}
             >
               {updating ? <Loader className="animate-spin" /> : t('Mute user publicly')}
             </Button>

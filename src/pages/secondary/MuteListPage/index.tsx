@@ -76,7 +76,7 @@ MuteListPage.displayName = 'MuteListPage'
 export default MuteListPage
 
 function UserItem({ pubkey }: { pubkey: string }) {
-  const { getMuteType, switchToPrivateMute, switchToPublicMute } = useMuteList()
+  const { changing, getMuteType, switchToPrivateMute, switchToPublicMute } = useMuteList()
   const { profile } = useFetchProfile(pubkey)
   const muteType = useMemo(() => getMuteType(pubkey), [pubkey, getMuteType])
   const [switching, setSwitching] = useState(false)
@@ -108,8 +108,9 @@ function UserItem({ pubkey }: { pubkey: string }) {
               setSwitching(true)
               switchToPublicMute(pubkey).finally(() => setSwitching(false))
             }}
+            disabled={changing}
           >
-            <Lock className="text-muted-foreground" />
+            <Lock className="text-green-400" />
           </Button>
         ) : muteType === 'public' ? (
           <Button
@@ -121,6 +122,7 @@ function UserItem({ pubkey }: { pubkey: string }) {
               setSwitching(true)
               switchToPrivateMute(pubkey).finally(() => setSwitching(false))
             }}
+            disabled={changing}
           >
             <Unlock className="text-muted-foreground" />
           </Button>

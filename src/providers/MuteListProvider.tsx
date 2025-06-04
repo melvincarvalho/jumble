@@ -2,6 +2,7 @@ import { createMuteListDraftEvent } from '@/lib/draft-event'
 import { extractPubkeysFromEventTags } from '@/lib/tag'
 import client from '@/services/client.service'
 import indexedDb from '@/services/indexed-db.service'
+import dayjs from 'dayjs'
 import { Event } from 'nostr-tools'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
@@ -9,6 +10,7 @@ import { useNostr } from './NostrProvider'
 
 type TMuteListContext = {
   mutePubkeys: string[]
+  changing: boolean
   getMutePubkeys: () => string[]
   getMuteType: (pubkey: string) => 'public' | 'private' | null
   mutePubkeyPublicly: (pubkey: string) => Promise<void>
@@ -49,6 +51,7 @@ export function MuteListProvider({ children }: { children: React.ReactNode }) {
       new Set([...Array.from(privateMutePubkeySet), ...Array.from(publicMutePubkeySet)])
     )
   }, [publicMutePubkeySet, privateMutePubkeySet])
+  const [changing, setChanging] = useState(false)
 
   const getPrivateTags = async (muteListEvent: Event) => {
     if (!muteListEvent.content) return []
@@ -100,108 +103,137 @@ export function MuteListProvider({ children }: { children: React.ReactNode }) {
     [publicMutePubkeySet, privateMutePubkeySet]
   )
 
-  const mutePubkeyPublicly = async (pubkey: string) => {
-    if (!accountPubkey) return
-
-    const muteListEvent = await client.fetchMuteListEvent(accountPubkey)
-    if (
-      muteListEvent &&
-      muteListEvent.tags.some(([tagName, tagValue]) => tagName === 'p' && tagValue === pubkey)
-    ) {
-      return
+  const publishNewMuteListEvent = async (tags: string[][], content?: string) => {
+    if (dayjs().unix() === muteListEvent?.created_at) {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
     }
-    const newTags = (muteListEvent?.tags ?? []).concat([['p', pubkey]])
-    const newMuteListDraftEvent = createMuteListDraftEvent(newTags, muteListEvent?.content ?? '')
-    const newMuteListEvent = await publish(newMuteListDraftEvent)
-    const privateTags = await getPrivateTags(newMuteListEvent)
-    await updateMuteListEvent(newMuteListEvent, privateTags)
+    const newMuteListDraftEvent = createMuteListDraftEvent(tags, content)
+    return await publish(newMuteListDraftEvent)
+  }
+
+  const mutePubkeyPublicly = async (pubkey: string) => {
+    if (!accountPubkey || changing) return
+
+    setChanging(true)
+    try {
+      const muteListEvent = await client.fetchMuteListEvent(accountPubkey)
+      if (
+        muteListEvent &&
+        muteListEvent.tags.some(([tagName, tagValue]) => tagName === 'p' && tagValue === pubkey)
+      ) {
+        return
+      }
+      const newTags = (muteListEvent?.tags ?? []).concat([['p', pubkey]])
+      const newMuteListEvent = await publishNewMuteListEvent(newTags, muteListEvent?.content)
+      const privateTags = await getPrivateTags(newMuteListEvent)
+      await updateMuteListEvent(newMuteListEvent, privateTags)
+    } finally {
+      setChanging(false)
+    }
   }
 
   const mutePubkeyPrivately = async (pubkey: string) => {
-    if (!accountPubkey) return
+    if (!accountPubkey || changing) return
 
-    const muteListEvent = await client.fetchMuteListEvent(accountPubkey)
-    const privateTags = muteListEvent ? await getPrivateTags(muteListEvent) : []
-    if (privateTags.some(([tagName, tagValue]) => tagName === 'p' && tagValue === pubkey)) {
-      return
+    setChanging(true)
+    try {
+      const muteListEvent = await client.fetchMuteListEvent(accountPubkey)
+      const privateTags = muteListEvent ? await getPrivateTags(muteListEvent) : []
+      if (privateTags.some(([tagName, tagValue]) => tagName === 'p' && tagValue === pubkey)) {
+        return
+      }
+
+      const newPrivateTags = privateTags.concat([['p', pubkey]])
+      const cipherText = await nip04Encrypt(accountPubkey, JSON.stringify(newPrivateTags))
+      const newMuteListEvent = await publishNewMuteListEvent(muteListEvent?.tags ?? [], cipherText)
+      await updateMuteListEvent(newMuteListEvent, newPrivateTags)
+    } finally {
+      setChanging(false)
     }
-
-    const newPrivateTags = privateTags.concat([['p', pubkey]])
-    const cipherText = await nip04Encrypt(accountPubkey, JSON.stringify(newPrivateTags))
-    const newMuteListDraftEvent = createMuteListDraftEvent(muteListEvent?.tags ?? [], cipherText)
-    const newMuteListEvent = await publish(newMuteListDraftEvent)
-    await updateMuteListEvent(newMuteListEvent, newPrivateTags)
   }
 
   const unmutePubkey = async (pubkey: string) => {
-    if (!accountPubkey) return
+    if (!accountPubkey || changing) return
 
-    const muteListEvent = await client.fetchMuteListEvent(accountPubkey)
-    if (!muteListEvent) return
+    setChanging(true)
+    try {
+      const muteListEvent = await client.fetchMuteListEvent(accountPubkey)
+      if (!muteListEvent) return
 
-    const privateTags = await getPrivateTags(muteListEvent)
-    const newPrivateTags = privateTags.filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey)
-    let cipherText = muteListEvent.content
-    if (newPrivateTags.length !== privateTags.length) {
-      cipherText = await nip04Encrypt(accountPubkey, JSON.stringify(newPrivateTags))
+      const privateTags = await getPrivateTags(muteListEvent)
+      const newPrivateTags = privateTags.filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey)
+      let cipherText = muteListEvent.content
+      if (newPrivateTags.length !== privateTags.length) {
+        cipherText = await nip04Encrypt(accountPubkey, JSON.stringify(newPrivateTags))
+      }
+
+      const newMuteListEvent = await publishNewMuteListEvent(
+        muteListEvent.tags.filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey),
+        cipherText
+      )
+      await updateMuteListEvent(newMuteListEvent, newPrivateTags)
+    } finally {
+      setChanging(false)
     }
-
-    const newMuteListDraftEvent = createMuteListDraftEvent(
-      muteListEvent.tags.filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey),
-      cipherText
-    )
-    const newMuteListEvent = await publish(newMuteListDraftEvent)
-    await updateMuteListEvent(newMuteListEvent, newPrivateTags)
   }
 
   const switchToPublicMute = async (pubkey: string) => {
-    if (!accountPubkey) return
+    if (!accountPubkey || changing) return
 
-    const muteListEvent = await client.fetchMuteListEvent(accountPubkey)
-    if (!muteListEvent) return
+    setChanging(true)
+    try {
+      const muteListEvent = await client.fetchMuteListEvent(accountPubkey)
+      if (!muteListEvent) return
 
-    const privateTags = await getPrivateTags(muteListEvent)
-    const newPrivateTags = privateTags.filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey)
-    if (newPrivateTags.length === privateTags.length) {
-      return
+      const privateTags = await getPrivateTags(muteListEvent)
+      const newPrivateTags = privateTags.filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey)
+      if (newPrivateTags.length === privateTags.length) {
+        return
+      }
+
+      const cipherText = await nip04Encrypt(accountPubkey, JSON.stringify(newPrivateTags))
+      const newMuteListEvent = await publishNewMuteListEvent(
+        muteListEvent.tags
+          .filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey)
+          .concat([['p', pubkey]]),
+        cipherText
+      )
+      await updateMuteListEvent(newMuteListEvent, newPrivateTags)
+    } finally {
+      setChanging(false)
     }
-
-    const cipherText = await nip04Encrypt(accountPubkey, JSON.stringify(newPrivateTags))
-    const newMuteListDraftEvent = createMuteListDraftEvent(
-      muteListEvent.tags
-        .filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey)
-        .concat([['p', pubkey]]),
-      cipherText
-    )
-    const newMuteListEvent = await publish(newMuteListDraftEvent)
-    await updateMuteListEvent(newMuteListEvent, newPrivateTags)
   }
 
   const switchToPrivateMute = async (pubkey: string) => {
-    if (!accountPubkey) return
+    if (!accountPubkey || changing) return
 
-    const muteListEvent = await client.fetchMuteListEvent(accountPubkey)
-    if (!muteListEvent) return
+    setChanging(true)
+    try {
+      const muteListEvent = await client.fetchMuteListEvent(accountPubkey)
+      if (!muteListEvent) return
 
-    const newTags = muteListEvent.tags.filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey)
-    if (newTags.length === muteListEvent.tags.length) {
-      return
+      const newTags = muteListEvent.tags.filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey)
+      if (newTags.length === muteListEvent.tags.length) {
+        return
+      }
+
+      const privateTags = await getPrivateTags(muteListEvent)
+      const newPrivateTags = privateTags
+        .filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey)
+        .concat([['p', pubkey]])
+      const cipherText = await nip04Encrypt(accountPubkey, JSON.stringify(newPrivateTags))
+      const newMuteListEvent = await publishNewMuteListEvent(newTags, cipherText)
+      await updateMuteListEvent(newMuteListEvent, newPrivateTags)
+    } finally {
+      setChanging(false)
     }
-
-    const privateTags = await getPrivateTags(muteListEvent)
-    const newPrivateTags = privateTags
-      .filter((tag) => tag[0] !== 'p' || tag[1] !== pubkey)
-      .concat([['p', pubkey]])
-    const cipherText = await nip04Encrypt(accountPubkey, JSON.stringify(newPrivateTags))
-    const newMuteListDraftEvent = createMuteListDraftEvent(newTags, cipherText)
-    const newMuteListEvent = await publish(newMuteListDraftEvent)
-    await updateMuteListEvent(newMuteListEvent, newPrivateTags)
   }
 
   return (
     <MuteListContext.Provider
       value={{
         mutePubkeys,
+        changing,
         getMutePubkeys,
         getMuteType,
         mutePubkeyPublicly,
