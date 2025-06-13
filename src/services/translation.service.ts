@@ -25,6 +25,20 @@ class TranslationService {
     return data
   }
 
+  async regenerateApiKey(): Promise<{ api_key: string }> {
+    const url = API_BASE_URL + '/v1/translation/regenerate-api-key'
+    const auth = await client.signHttpAuth(url, 'post')
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: auth }
+    })
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.error ?? 'Failed to regenerate API key')
+    }
+    return data
+  }
+
   async createTransaction(
     pubkey: string,
     amount: number

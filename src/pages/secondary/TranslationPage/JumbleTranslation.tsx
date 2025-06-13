@@ -1,11 +1,20 @@
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks'
 import { cn } from '@/lib/utils'
 import { useNostr } from '@/providers/NostrProvider'
 import translation from '@/services/translation.service'
 import { closeModal, launchPaymentModal } from '@getalby/bitcoin-connect-react'
-import { Check, Copy, Eye, EyeOff, Loader } from 'lucide-react'
+import { Check, Copy, Eye, EyeOff, Loader, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 type JumbleTranslationAccount = {
@@ -25,6 +34,8 @@ export function JumbleTranslation() {
   const [recharging, setRecharging] = useState(false)
   const [rechargeAmount, setRechargeAmount] = useState('')
   const [selectedAmount, setSelectedAmount] = useState<number | null>(1000)
+  const [resettingApiKey, setResettingApiKey] = useState(false)
+  const [showResetDialog, setShowResetDialog] = useState(false)
 
   useEffect(() => {
     if (!pubkey) return
@@ -141,6 +152,30 @@ export function JumbleTranslation() {
     }
   }
 
+  const regenerateApiKey = async () => {
+    if (resettingApiKey || !account) return
+
+    setResettingApiKey(true)
+    try {
+      const { api_key } = await translation.regenerateApiKey()
+
+      setAccount((prev) => ({
+        ...prev!,
+        apiKey: api_key
+      }))
+      setShowResetDialog(false)
+    } catch (error) {
+      toast({
+        title: 'Failed to Reset API Key',
+        description:
+          error instanceof Error ? error.message : 'An error occurred while resetting the API key',
+        variant: 'destructive'
+      })
+    } finally {
+      setResettingApiKey(false)
+    }
+  }
+
   if (!account && !loadingAccount) {
     return (
       <div className="w-full flex justify-center">
@@ -185,6 +220,39 @@ export function JumbleTranslation() {
           >
             {copied ? <Check /> : <Copy />}
           </Button>
+          <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={!account?.apiKey}>
+                <RotateCcw />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Reset API Key</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to reset your API key? This action cannot be undone.
+                  <br />
+                  <br />
+                  <strong>Warning:</strong> Your current API key will become invalid immediately,
+                  and any applications using it will stop working until you update them with the new
+                  key.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowResetDialog(false)}
+                  disabled={resettingApiKey}
+                >
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={regenerateApiKey} disabled={resettingApiKey}>
+                  {resettingApiKey && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+                  Reset API Key
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
         <p className="text-sm text-muted-foreground select-text">
           This API is compatible with LibreTranslate. Service URL: https://api.jumble.social
