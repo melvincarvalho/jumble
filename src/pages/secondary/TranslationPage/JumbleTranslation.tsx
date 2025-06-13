@@ -2,8 +2,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks'
 import { cn } from '@/lib/utils'
+import { useNostr } from '@/providers/NostrProvider'
 import translation from '@/services/translation.service'
-import { launchPaymentModal } from '@getalby/bitcoin-connect-react'
+import { closeModal, launchPaymentModal } from '@getalby/bitcoin-connect-react'
 import { Check, Copy, Eye, EyeOff, Loader } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -15,34 +16,52 @@ type JumbleTranslationAccount = {
 
 export function JumbleTranslation() {
   const { toast } = useToast()
+  const { pubkey, checkLogin } = useNostr()
+  const [refreshCount, setRefreshCount] = useState(0)
+  const [loadingAccount, setLoadingAccount] = useState(true)
   const [account, setAccount] = useState<JumbleTranslationAccount | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [showApiKey, setShowApiKey] = useState(false)
   const [copied, setCopied] = useState(false)
   const [recharging, setRecharging] = useState(false)
+  const [rechargeAmount, setRechargeAmount] = useState('')
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(1000)
 
   useEffect(() => {
+    if (!pubkey) return
+
     const init = async () => {
       try {
+        setLoadingAccount(true)
         const accountData = await translation.getAccount()
         setAccount({
           pubkey: accountData.pubkey,
           apiKey: accountData.api_key,
           balance: accountData.balance
         })
-        setError(null)
       } catch (error) {
-        setError(error instanceof Error ? error.message : 'Failed to fetch account information')
-        setAccount(null)
+        toast({
+          title: 'Failed to load account',
+          description:
+            error instanceof Error ? error.message : 'An error occurred while loading the account',
+          variant: 'destructive'
+        })
+      } finally {
+        setLoadingAccount(false)
       }
     }
     init()
-  }, [])
+  }, [pubkey, refreshCount])
 
-  const [rechargeAmount, setRechargeAmount] = useState('')
-  const [selectedAmount, setSelectedAmount] = useState<number | null>(null)
-
-  const presetAmounts = [1000, 10000, 100000, 1000000]
+  const presetAmounts = [
+    { amount: 1_000, text: '1k' },
+    { amount: 2_500, text: '2.5k' },
+    { amount: 5_000, text: '5k' },
+    { amount: 10_000, text: '10k' },
+    { amount: 25_000, text: '25k' },
+    { amount: 50_000, text: '50k' },
+    { amount: 100_000, text: '100k' },
+    { amount: 250_000, text: '250k' }
+  ]
   const charactersPerUnit = 100 // 1 unit = 100 characters
 
   const calculateCharacters = (amount: number) => {
@@ -83,12 +102,22 @@ export function JumbleTranslation() {
       checkPaymentInterval = setInterval(async () => {
         try {
           const { state } = await translation.checkTransaction(transactionId)
+          if (state === 'pending') return
+
+          clearInterval(checkPaymentInterval)
+          setRecharging(false)
+
           if (state === 'settled') {
-            clearInterval(checkPaymentInterval)
-            setRecharging(false)
             setPaid({ preimage: '' }) // Preimage is not returned, but we can assume payment is successful
+            setRefreshCount((prev) => prev + 1)
+          } else {
+            closeModal()
+            toast({
+              title: 'Invoice Expired',
+              description: 'The invoice has expired or the payment was not successful.',
+              variant: 'destructive'
+            })
           }
-          failedCount = 0 // Reset failed count on successful check
         } catch (err) {
           failedCount++
           if (failedCount <= 3) return
@@ -112,12 +141,12 @@ export function JumbleTranslation() {
     }
   }
 
-  if (error) {
-    return <div className="text-center w-full">{error}</div>
-  }
-
-  if (!account) {
-    return <div className="text-center w-full">Loading...</div>
+  if (!account && !loadingAccount) {
+    return (
+      <div className="w-full flex justify-center">
+        <Button onClick={() => checkLogin(() => setRefreshCount((prev) => prev + 1))}>Login</Button>
+      </div>
+    )
   }
 
   return (
@@ -126,7 +155,7 @@ export function JumbleTranslation() {
       <div className="space-y-2">
         <p className="font-medium">Balance</p>
         <div className="flex items-baseline gap-2">
-          <p className="text-3xl font-bold">{account.balance.toLocaleString()}</p>
+          <p className="text-3xl font-bold">{account?.balance.toLocaleString() ?? '0'}</p>
           <p className="text-muted-foreground">characters</p>
         </div>
       </div>
@@ -137,7 +166,7 @@ export function JumbleTranslation() {
         <div className="flex items-center gap-2">
           <Input
             type={showApiKey ? 'text' : 'password'}
-            value={account.apiKey}
+            value={account?.apiKey ?? ''}
             readOnly
             className="font-mono w-fit"
           />
@@ -146,7 +175,9 @@ export function JumbleTranslation() {
           </Button>
           <Button
             variant="outline"
+            disabled={!account?.apiKey}
             onClick={() => {
+              if (!account?.apiKey) return
               navigator.clipboard.writeText(account.apiKey)
               setCopied(true)
               setTimeout(() => setCopied(false), 2000)
@@ -166,18 +197,18 @@ export function JumbleTranslation() {
 
         {/* Preset amounts */}
         <div className="grid grid-cols-2 gap-2">
-          {presetAmounts.map((amount) => (
+          {presetAmounts.map(({ amount, text }) => (
             <Button
               key={amount}
               variant="outline"
               onClick={() => handlePresetClick(amount)}
               className={cn(
-                'flex flex-col h-auto py-3',
+                'flex flex-col h-auto py-3 hover:bg-primary/10',
                 selectedAmount === amount && 'border border-primary bg-primary/10'
               )}
             >
-              <span className="font-semibold">{amount.toLocaleString()} sats</span>
-              <span className="text-xs opacity-75">
+              <span className="font-semibold">{text} sats</span>
+              <span className="text-sm text-muted-foreground">
                 {calculateCharacters(amount).toLocaleString()} characters
               </span>
             </Button>
