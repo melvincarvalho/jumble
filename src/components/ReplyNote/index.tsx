@@ -73,7 +73,7 @@ export default function ReplyNote({
               />
             )}
             {show ? (
-              <Content className="mt-2" event={event} />
+              <Content className="mt-2" event={translatedEvent ?? event} />
             ) : (
               <Button
                 variant="outline"
