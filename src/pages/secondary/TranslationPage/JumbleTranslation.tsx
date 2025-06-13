@@ -65,14 +65,14 @@ export function JumbleTranslation() {
 
     setRecharging(true)
     try {
-      const { transaction_id, invoice_id } = await translation.createTransaction(
+      const { transactionId, invoiceId } = await translation.createTransaction(
         account.pubkey,
         amount
       )
 
       let checkPaymentInterval: ReturnType<typeof setInterval> | undefined = undefined
       const { setPaid } = launchPaymentModal({
-        invoice: invoice_id,
+        invoice: invoiceId,
         onCancelled: () => {
           clearInterval(checkPaymentInterval)
           setRecharging(false)
@@ -82,7 +82,7 @@ export function JumbleTranslation() {
       let failedCount = 0
       checkPaymentInterval = setInterval(async () => {
         try {
-          const { state } = await translation.completeTransaction(transaction_id)
+          const { state } = await translation.checkTransaction(transactionId)
           if (state === 'settled') {
             clearInterval(checkPaymentInterval)
             setRecharging(false)

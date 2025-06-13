@@ -29,8 +29,8 @@ class TranslationService {
     pubkey: string,
     amount: number
   ): Promise<{
-    transaction_id: string
-    invoice_id: string
+    transactionId: string
+    invoiceId: string
   }> {
     const url = API_BASE_URL + '/v1/transactions'
     const response = await fetch(url, {
@@ -42,7 +42,7 @@ class TranslationService {
         pubkey,
         amount,
         description: 'Recharge for Jumble translation service',
-        purpose: 'translate'
+        purpose: 'translation'
       })
     })
     const data = await response.json()
@@ -52,10 +52,10 @@ class TranslationService {
     return data
   }
 
-  async completeTransaction(transactionId: string): Promise<{
+  async checkTransaction(transactionId: string): Promise<{
     state: 'pending' | 'failed' | 'settled'
   }> {
-    const url = API_BASE_URL + `/v1/transactions/${transactionId}/complete`
+    const url = API_BASE_URL + `/v1/transactions/${transactionId}/check`
     const response = await fetch(url, {
       method: 'POST'
     })
