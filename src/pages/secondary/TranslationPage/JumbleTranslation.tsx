@@ -200,7 +200,7 @@ export function JumbleTranslation() {
               if (!account?.api_key) return
               navigator.clipboard.writeText(account.api_key)
               setCopied(true)
-              setTimeout(() => setCopied(false), 2000)
+              setTimeout(() => setCopied(false), 4000)
             }}
           >
             {copied ? <Check /> : <Copy />}
