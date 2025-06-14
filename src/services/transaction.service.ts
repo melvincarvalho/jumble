@@ -1,42 +1,13 @@
-import client from './client.service'
-
 const API_BASE_URL = 'https://api.jumble.social'
 
-class TranslationService {
-  static instance: TranslationService
+class TransactionService {
+  static instance: TransactionService
 
   constructor() {
-    if (!TranslationService.instance) {
-      TranslationService.instance = this
+    if (!TransactionService.instance) {
+      TransactionService.instance = this
     }
-    return TranslationService.instance
-  }
-
-  async getAccount() {
-    const url = API_BASE_URL + '/v1/translation/account'
-    const auth = await client.signHttpAuth(url, 'get')
-    const response = await fetch(url, {
-      headers: { Authorization: auth }
-    })
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error ?? 'Failed to fetch account information')
-    }
-    return data
-  }
-
-  async regenerateApiKey(): Promise<{ api_key: string }> {
-    const url = API_BASE_URL + '/v1/translation/regenerate-api-key'
-    const auth = await client.signHttpAuth(url, 'post')
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { Authorization: auth }
-    })
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error ?? 'Failed to regenerate API key')
-    }
-    return data
+    return TransactionService.instance
   }
 
   async createTransaction(
@@ -81,5 +52,5 @@ class TranslationService {
   }
 }
 
-const instance = new TranslationService()
+const instance = new TransactionService()
 export default instance

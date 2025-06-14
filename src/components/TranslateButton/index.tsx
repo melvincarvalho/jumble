@@ -1,9 +1,9 @@
 import { useToast } from '@/hooks'
 import { isSupportedKind } from '@/lib/event'
+import { useTranslationService } from '@/providers/TranslationServiceProvider'
 import { Languages, Loader } from 'lucide-react'
 import { Event } from 'nostr-tools'
 import { useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 export default function TranslateButton({
   event,
@@ -12,8 +12,8 @@ export default function TranslateButton({
   event: Event
   setTranslatedEvent: (event: Event | null) => void
 }) {
-  const { i18n } = useTranslation()
   const { toast } = useToast()
+  const { translate } = useTranslationService()
   const [translating, setTranslating] = useState(false)
   const supported = useMemo(() => isSupportedKind(event.kind), [event])
 
@@ -21,23 +21,12 @@ export default function TranslateButton({
     return null
   }
 
-  const translate = async () => {
+  const handleTranslate = async () => {
     if (translating) return
 
     setTranslating(true)
-    await fetch('http://localhost:3000/translation/translate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ q: event.content, target: i18n.language, api_key: 'test' })
-    })
-      .then(async (res) => {
-        const data = await res.json()
-        if (!res.ok) {
-          throw new Error(data.error)
-        }
-        const translatedText = data.translatedText
+    await translate(event.content)
+      .then(async (translatedText) => {
         if (translatedText) {
           const translatedEvent = { ...event, content: translatedText }
           setTranslatedEvent(translatedEvent)
@@ -61,7 +50,7 @@ export default function TranslateButton({
       disabled={translating}
       onClick={(e) => {
         e.stopPropagation()
-        translate()
+        handleTranslate()
       }}
     >
       {translating ? <Loader className="animate-spin size-4" /> : <Languages className="size-4" />}

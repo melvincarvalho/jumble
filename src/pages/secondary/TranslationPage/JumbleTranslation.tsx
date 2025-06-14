@@ -12,23 +12,18 @@ import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks'
 import { cn } from '@/lib/utils'
 import { useNostr } from '@/providers/NostrProvider'
-import translation from '@/services/translation.service'
+import { useTranslationService } from '@/providers/TranslationServiceProvider'
+import transaction from '@/services/transaction.service'
 import { closeModal, launchPaymentModal } from '@getalby/bitcoin-connect-react'
 import { Check, Copy, Eye, EyeOff, Loader, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-type JumbleTranslationAccount = {
-  pubkey: string
-  apiKey: string
-  balance: number
-}
-
 export function JumbleTranslation() {
   const { toast } = useToast()
   const { pubkey, checkLogin } = useNostr()
+  const { account, getAccount, regenerateApiKey } = useTranslationService()
   const [refreshCount, setRefreshCount] = useState(0)
   const [loadingAccount, setLoadingAccount] = useState(true)
-  const [account, setAccount] = useState<JumbleTranslationAccount | null>(null)
   const [showApiKey, setShowApiKey] = useState(false)
   const [copied, setCopied] = useState(false)
   const [recharging, setRecharging] = useState(false)
@@ -43,12 +38,7 @@ export function JumbleTranslation() {
     const init = async () => {
       try {
         setLoadingAccount(true)
-        const accountData = await translation.getAccount()
-        setAccount({
-          pubkey: accountData.pubkey,
-          apiKey: accountData.api_key,
-          balance: accountData.balance
-        })
+        await getAccount()
       } catch (error) {
         toast({
           title: 'Failed to load account',
@@ -95,7 +85,7 @@ export function JumbleTranslation() {
 
     setRecharging(true)
     try {
-      const { transactionId, invoiceId } = await translation.createTransaction(
+      const { transactionId, invoiceId } = await transaction.createTransaction(
         account.pubkey,
         amount
       )
@@ -112,7 +102,7 @@ export function JumbleTranslation() {
       let failedCount = 0
       checkPaymentInterval = setInterval(async () => {
         try {
-          const { state } = await translation.checkTransaction(transactionId)
+          const { state } = await transaction.checkTransaction(transactionId)
           if (state === 'pending') return
 
           clearInterval(checkPaymentInterval)
@@ -152,17 +142,12 @@ export function JumbleTranslation() {
     }
   }
 
-  const regenerateApiKey = async () => {
+  const handleRegenerateApiKey = async () => {
     if (resettingApiKey || !account) return
 
     setResettingApiKey(true)
     try {
-      const { api_key } = await translation.regenerateApiKey()
-
-      setAccount((prev) => ({
-        ...prev!,
-        apiKey: api_key
-      }))
+      await regenerateApiKey()
       setShowResetDialog(false)
     } catch (error) {
       toast({
@@ -201,7 +186,7 @@ export function JumbleTranslation() {
         <div className="flex items-center gap-2">
           <Input
             type={showApiKey ? 'text' : 'password'}
-            value={account?.apiKey ?? ''}
+            value={account?.api_key ?? ''}
             readOnly
             className="font-mono w-fit"
           />
@@ -210,10 +195,10 @@ export function JumbleTranslation() {
           </Button>
           <Button
             variant="outline"
-            disabled={!account?.apiKey}
+            disabled={!account?.api_key}
             onClick={() => {
-              if (!account?.apiKey) return
-              navigator.clipboard.writeText(account.apiKey)
+              if (!account?.api_key) return
+              navigator.clipboard.writeText(account.api_key)
               setCopied(true)
               setTimeout(() => setCopied(false), 2000)
             }}
@@ -222,7 +207,7 @@ export function JumbleTranslation() {
           </Button>
           <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" disabled={!account?.apiKey}>
+              <Button variant="outline" disabled={!account?.api_key}>
                 <RotateCcw />
               </Button>
             </DialogTrigger>
@@ -246,7 +231,11 @@ export function JumbleTranslation() {
                 >
                   Cancel
                 </Button>
-                <Button variant="destructive" onClick={regenerateApiKey} disabled={resettingApiKey}>
+                <Button
+                  variant="destructive"
+                  onClick={handleRegenerateApiKey}
+                  disabled={resettingApiKey}
+                >
                   {resettingApiKey && <Loader className="animate-spin" />}
                   Reset API Key
                 </Button>
