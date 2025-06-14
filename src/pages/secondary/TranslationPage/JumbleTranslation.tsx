@@ -247,7 +247,7 @@ export function JumbleTranslation() {
                   Cancel
                 </Button>
                 <Button variant="destructive" onClick={regenerateApiKey} disabled={resettingApiKey}>
-                  {resettingApiKey && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+                  {resettingApiKey && <Loader className="animate-spin" />}
                   Reset API Key
                 </Button>
               </DialogFooter>
@@ -275,7 +275,7 @@ export function JumbleTranslation() {
                 selectedAmount === amount && 'border border-primary bg-primary/10'
               )}
             >
-              <span className="font-semibold">{text} sats</span>
+              <span className="text-lg font-semibold">{text} sats</span>
               <span className="text-sm text-muted-foreground">
                 {calculateCharacters(amount).toLocaleString()} characters
               </span>
