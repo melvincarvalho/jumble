@@ -57,7 +57,7 @@ export default function ReplyNote({
                   <FormattedTimestamp timestamp={event.created_at} />
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center">
                 <TranslateButton event={event} setTranslatedEvent={setTranslatedEvent} />
                 <NoteOptions event={event} className="shrink-0 [&_svg]:size-5" />
               </div>

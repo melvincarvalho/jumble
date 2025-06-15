@@ -1,7 +1,8 @@
 import { useToast } from '@/hooks'
 import { isSupportedKind } from '@/lib/event'
+import { cn } from '@/lib/utils'
 import { useTranslationService } from '@/providers/TranslationServiceProvider'
-import { Languages, Loader } from 'lucide-react'
+import { Languages } from 'lucide-react'
 import { Event } from 'nostr-tools'
 import { useMemo, useState } from 'react'
 
@@ -15,6 +16,7 @@ export default function TranslateButton({
   const { toast } = useToast()
   const { translate } = useTranslationService()
   const [translating, setTranslating] = useState(false)
+  const [translated, setTranslated] = useState(false)
   const supported = useMemo(() => isSupportedKind(event.kind), [event])
 
   if (!supported) {
@@ -30,6 +32,7 @@ export default function TranslateButton({
         if (translatedText) {
           const translatedEvent = { ...event, content: translatedText }
           setTranslatedEvent(translatedEvent)
+          setTranslated(true)
         }
       })
       .catch((error) => {
@@ -50,10 +53,24 @@ export default function TranslateButton({
       disabled={translating}
       onClick={(e) => {
         e.stopPropagation()
-        handleTranslate()
+        if (translated) {
+          setTranslatedEvent(null)
+          setTranslated(false)
+        } else {
+          handleTranslate()
+        }
       }}
     >
-      {translating ? <Loader className="animate-spin size-4" /> : <Languages className="size-4" />}
+      <Languages
+        className={cn(
+          'size-4',
+          translating
+            ? 'text-primary animate-pulse'
+            : translated
+              ? 'text-primary hover:text-primary/60'
+              : ''
+        )}
+      />
     </button>
   )
 }

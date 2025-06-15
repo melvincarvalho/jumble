@@ -114,7 +114,9 @@ export function TranslationServiceProvider({ children }: { children: React.React
     if (!response.ok) {
       throw new Error(data.error ?? 'Failed to translate')
     }
-    return data.translatedText
+    const translatedText = data.translatedText
+    translatedTextCache[cacheKey] = translatedText
+    return translatedText
   }
 
   return (
