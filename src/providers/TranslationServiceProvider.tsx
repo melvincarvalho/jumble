@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 
 const API_BASE_URL = 'https://api.jumble.social'
 
+const translatedTextCache: Record<string, string> = {}
+
 type TTranslationAccount = {
   pubkey: string
   api_key: string
@@ -89,6 +91,12 @@ export function TranslationServiceProvider({ children }: { children: React.React
   }
 
   const translate = async (text: string): Promise<string | void> => {
+    const target = i18n.language
+    const cacheKey = await generateCacheKey(text, target)
+    if (translatedTextCache[cacheKey]) {
+      return translatedTextCache[cacheKey]
+    }
+
     let api_key = account?.api_key
     if (!api_key) {
       const act = await getAccount()
@@ -100,7 +108,7 @@ export function TranslationServiceProvider({ children }: { children: React.React
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api_key}` },
-      body: JSON.stringify({ q: text, target: i18n.language })
+      body: JSON.stringify({ q: text, target })
     })
     const data = await response.json()
     if (!response.ok) {
@@ -116,4 +124,12 @@ export function TranslationServiceProvider({ children }: { children: React.React
       {children}
     </TranslationServiceContext.Provider>
   )
+}
+
+async function generateCacheKey(text: string, target: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(text + '_' + target)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
 }
