@@ -1,8 +1,7 @@
+import { JUMBLE_API_BASE_URL } from '@/constants'
 import { createContext, useContext, useEffect, useState } from 'react'
-import { useNostr } from './NostrProvider'
 import { useTranslation } from 'react-i18next'
-
-const API_BASE_URL = 'https://api.jumble.social'
+import { useNostr } from './NostrProvider'
 
 const translatedTextCache: Record<string, string> = {}
 
@@ -43,7 +42,7 @@ export function TranslationServiceProvider({ children }: { children: React.React
       startLogin()
       return
     }
-    const url = API_BASE_URL + '/v1/translation/account'
+    const url = new URL('/v1/translation/account', JUMBLE_API_BASE_URL).toString()
 
     let auth: string
     if (account?.api_key) {
@@ -71,7 +70,7 @@ export function TranslationServiceProvider({ children }: { children: React.React
 
       api_key = act.api_key
     }
-    const url = API_BASE_URL + '/v1/translation/regenerate-api-key'
+    const url = new URL('/v1/translation/regenerate-api-key', JUMBLE_API_BASE_URL).toString()
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api_key}` }
@@ -104,7 +103,7 @@ export function TranslationServiceProvider({ children }: { children: React.React
 
       api_key = act.api_key
     }
-    const url = API_BASE_URL + '/v1/translation/translate'
+    const url = new URL('/v1/translation/translate', JUMBLE_API_BASE_URL).toString()
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api_key}` },

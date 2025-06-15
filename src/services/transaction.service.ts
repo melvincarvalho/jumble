@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://api.jumble.social'
+import { JUMBLE_API_BASE_URL } from '@/constants'
 
 class TransactionService {
   static instance: TransactionService
@@ -17,7 +17,7 @@ class TransactionService {
     transactionId: string
     invoiceId: string
   }> {
-    const url = API_BASE_URL + '/v1/transactions'
+    const url = new URL('/v1/transactions', JUMBLE_API_BASE_URL).toString()
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -40,7 +40,7 @@ class TransactionService {
   async checkTransaction(transactionId: string): Promise<{
     state: 'pending' | 'failed' | 'settled'
   }> {
-    const url = API_BASE_URL + `/v1/transactions/${transactionId}/check`
+    const url = new URL(`/v1/transactions/${transactionId}/check`, JUMBLE_API_BASE_URL).toString()
     const response = await fetch(url, {
       method: 'POST'
     })

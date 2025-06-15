@@ -9,6 +9,7 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { JUMBLE_API_BASE_URL } from '@/constants'
 import { useToast } from '@/hooks'
 import { cn } from '@/lib/utils'
 import { useNostr } from '@/providers/NostrProvider'
@@ -244,7 +245,7 @@ export function JumbleTranslation() {
           </Dialog>
         </div>
         <p className="text-sm text-muted-foreground select-text">
-          This API is compatible with LibreTranslate. Service URL: https://api.jumble.social
+          This API is compatible with LibreTranslate. Service URL: {JUMBLE_API_BASE_URL}
         </p>
       </div>
 
