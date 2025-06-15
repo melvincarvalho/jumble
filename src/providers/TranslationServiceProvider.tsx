@@ -72,8 +72,7 @@ export function TranslationServiceProvider({ children }: { children: React.React
     const url = API_BASE_URL + '/v1/translation/regenerate-api-key'
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ api_key })
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api_key}` }
     })
     const data = await response.json()
     if (!response.ok) {
@@ -100,8 +99,8 @@ export function TranslationServiceProvider({ children }: { children: React.React
     const url = API_BASE_URL + '/v1/translation/translate'
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: text, target: i18n.language, api_key })
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api_key}` },
+      body: JSON.stringify({ q: text, target: i18n.language })
     })
     const data = await response.json()
     if (!response.ok) {
