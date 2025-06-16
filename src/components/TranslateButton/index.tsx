@@ -9,7 +9,9 @@ import {
 } from '@/constants'
 import { useToast } from '@/hooks'
 import { isSupportedKind } from '@/lib/event'
+import { toTranslation } from '@/lib/link'
 import { cn } from '@/lib/utils'
+import { useSecondaryPage } from '@/PageManager'
 import { useTranslationService } from '@/providers/TranslationServiceProvider'
 import { franc } from 'franc-min'
 import { Languages } from 'lucide-react'
@@ -28,6 +30,7 @@ export default function TranslateButton({
 }) {
   const { i18n } = useTranslation()
   const { toast } = useToast()
+  const { push } = useSecondaryPage()
   const { translatedEventIdSet, translate, showOriginalEvent } = useTranslationService()
   const [translating, setTranslating] = useState(false)
   const translated = useMemo(
@@ -118,6 +121,9 @@ export default function TranslateButton({
           description: error.message || 'An error occurred while translating the note.',
           variant: 'destructive'
         })
+        if (error.message === 'Insufficient balance.') {
+          push(toTranslation())
+        }
       })
       .finally(() => {
         setTranslating(false)

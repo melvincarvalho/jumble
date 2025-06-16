@@ -121,3 +121,9 @@ export type TEmoji = {
   shortcode: string
   url: string
 }
+
+export type TTranslationAccount = {
+  pubkey: string
+  api_key: string
+  balance: number
+}

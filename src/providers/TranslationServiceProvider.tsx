@@ -1,16 +1,11 @@
-import { JUMBLE_API_BASE_URL } from '@/constants'
+import translation from '@/services/translation.service'
+import { TTranslationAccount } from '@/types'
 import { Event } from 'nostr-tools'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNostr } from './NostrProvider'
 
 const translatedEventCache: Record<string, Event> = {}
-
-type TTranslationAccount = {
-  pubkey: string
-  api_key: string
-  balance: number
-}
 
 type TTranslationServiceContext = {
   account: TTranslationAccount | null
@@ -46,47 +41,24 @@ export function TranslationServiceProvider({ children }: { children: React.React
       startLogin()
       return
     }
-    const url = new URL('/v1/translation/account', JUMBLE_API_BASE_URL).toString()
-
-    let auth: string
-    if (account?.api_key && canAuthWithApiKey) {
-      auth = `Bearer ${account.api_key}`
-    } else {
-      auth = await signHttpAuth(url, 'get')
-    }
-
-    const response = await fetch(url, {
-      headers: { Authorization: auth }
-    })
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error ?? 'Failed to fetch account information')
-    }
-    setAccount(data)
-    return data
+    const act = await translation.getAccount(
+      signHttpAuth,
+      canAuthWithApiKey ? account?.api_key : undefined
+    )
+    setAccount(act)
+    return act
   }
 
   const regenerateApiKey = async (): Promise<void> => {
-    let api_key = account?.api_key
-    if (!api_key) {
-      const act = await getAccount()
-      if (!act) return
-
-      api_key = act.api_key
+    if (!pubkey) {
+      startLogin()
+      return
     }
-    const url = new URL('/v1/translation/regenerate-api-key', JUMBLE_API_BASE_URL).toString()
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api_key}` }
-    })
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error ?? 'Failed to regenerate API key')
-    }
-    if (data.api_key) {
+    const newApiKey = await translation.regenerateApiKey(signHttpAuth, account?.api_key)
+    if (newApiKey) {
       setAccount((prev) => {
         if (prev) {
-          return { ...prev, api_key: data.api_key }
+          return { ...prev, api_key: newApiKey }
         }
         return prev
       })
@@ -101,24 +73,15 @@ export function TranslationServiceProvider({ children }: { children: React.React
       return translatedEventCache[cacheKey]
     }
 
-    let api_key = account?.api_key
-    if (!api_key) {
-      const act = await getAccount()
-      if (!act) return
-
-      api_key = act.api_key
+    const translatedText = await translation.translate(
+      event.content,
+      target,
+      signHttpAuth,
+      account?.api_key
+    )
+    if (!translatedText) {
+      return
     }
-    const url = new URL('/v1/translation/translate', JUMBLE_API_BASE_URL).toString()
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api_key}` },
-      body: JSON.stringify({ q: event.content, target })
-    })
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error ?? 'Failed to translate')
-    }
-    const translatedText = data.translatedText
     const translatedEvent: Event = { ...event, content: translatedText }
     translatedEventCache[cacheKey] = translatedEvent
     setTranslatedEventIdSet((prev) => new Set(prev.add(event.id)))

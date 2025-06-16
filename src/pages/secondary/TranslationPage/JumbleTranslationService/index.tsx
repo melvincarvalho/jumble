@@ -68,8 +68,8 @@ export function JumbleTranslationService() {
           This API is compatible with LibreTranslate. Service URL: {JUMBLE_API_BASE_URL}
         </p>
       </div>
-
       <Recharge />
+      <div className="h-40" />
     </div>
   )
 }
