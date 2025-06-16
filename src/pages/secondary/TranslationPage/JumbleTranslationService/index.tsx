@@ -4,19 +4,15 @@ import { JUMBLE_API_BASE_URL } from '@/constants'
 import { useNostr } from '@/providers/NostrProvider'
 import { useTranslationService } from '@/providers/TranslationServiceProvider'
 import { Check, Copy, Eye, EyeOff } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Recharge from './Recharge'
 import RegenerateApiKeyButton from './RegenerateApiKeyButton'
 
 export function JumbleTranslationService() {
   const { pubkey, startLogin } = useNostr()
-  const { account, getAccount } = useTranslationService()
+  const { account } = useTranslationService()
   const [showApiKey, setShowApiKey] = useState(false)
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    getAccount(false)
-  }, [pubkey])
 
   if (!pubkey) {
     return (

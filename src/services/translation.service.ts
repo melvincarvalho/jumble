@@ -1,6 +1,8 @@
 import { JUMBLE_API_BASE_URL } from '@/constants'
 import { TTranslationAccount } from '@/types'
 
+type SignHttpAuth = (url: string, method: string, content?: string) => Promise<string>
+
 class TranslationService {
   static instance: TranslationService
 
@@ -11,17 +13,14 @@ class TranslationService {
     return TranslationService.instance
   }
 
-  async getAccount(
-    signHttpAuth: (url: string, method: string) => Promise<string>,
-    api_key?: string
-  ): Promise<TTranslationAccount> {
+  async getAccount(signHttpAuth: SignHttpAuth, api_key?: string): Promise<TTranslationAccount> {
     const url = new URL('/v1/translation/account', JUMBLE_API_BASE_URL).toString()
 
     let auth: string
     if (api_key) {
       auth = `Bearer ${api_key}`
     } else {
-      auth = await signHttpAuth(url, 'get')
+      auth = await signHttpAuth(url, 'get', 'Auth to get Jumble translation service account')
     }
 
     const response = await fetch(url, {
@@ -35,7 +34,7 @@ class TranslationService {
   }
 
   async regenerateApiKey(
-    signHttpAuth: (url: string, method: string) => Promise<string>,
+    signHttpAuth: SignHttpAuth,
     api_key?: string
   ): Promise<string | undefined> {
     let auth: string
@@ -63,7 +62,7 @@ class TranslationService {
   async translate(
     text: string,
     target: string,
-    signHttpAuth: (url: string, method: string) => Promise<string>,
+    signHttpAuth: SignHttpAuth,
     api_key?: string
   ): Promise<string | undefined> {
     let auth: string

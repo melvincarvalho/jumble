@@ -34,17 +34,20 @@ export function TranslationServiceProvider({ children }: { children: React.React
 
   useEffect(() => {
     setAccount(null)
+
+    const init = async () => {
+      const act = await translation.getAccount(signHttpAuth)
+      setAccount(act)
+    }
+    init()
   }, [pubkey])
 
-  const getAccount = async (canAuthWithApiKey = true): Promise<TTranslationAccount | void> => {
+  const getAccount = async (): Promise<TTranslationAccount | void> => {
     if (!pubkey) {
       startLogin()
       return
     }
-    const act = await translation.getAccount(
-      signHttpAuth,
-      canAuthWithApiKey ? account?.api_key : undefined
-    )
+    const act = await translation.getAccount(signHttpAuth, account?.api_key)
     setAccount(act)
     return act
   }
