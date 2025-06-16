@@ -21,48 +21,27 @@ import { useEffect, useState } from 'react'
 
 export function JumbleTranslation() {
   const { toast } = useToast()
-  const { pubkey, checkLogin } = useNostr()
+  const { pubkey, startLogin } = useNostr()
   const { account, getAccount, regenerateApiKey } = useTranslationService()
-  const [refreshCount, setRefreshCount] = useState(0)
-  const [loadingAccount, setLoadingAccount] = useState(true)
   const [showApiKey, setShowApiKey] = useState(false)
   const [copied, setCopied] = useState(false)
   const [recharging, setRecharging] = useState(false)
-  const [rechargeAmount, setRechargeAmount] = useState('')
+  const [rechargeAmount, setRechargeAmount] = useState(1000)
   const [selectedAmount, setSelectedAmount] = useState<number | null>(1000)
   const [resettingApiKey, setResettingApiKey] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
 
   useEffect(() => {
-    if (!pubkey) return
-
-    const init = async () => {
-      try {
-        setLoadingAccount(true)
-        await getAccount()
-      } catch (error) {
-        toast({
-          title: 'Failed to load account',
-          description:
-            error instanceof Error ? error.message : 'An error occurred while loading the account',
-          variant: 'destructive'
-        })
-      } finally {
-        setLoadingAccount(false)
-      }
-    }
-    init()
-  }, [pubkey, refreshCount])
+    getAccount(false)
+  }, [pubkey])
 
   const presetAmounts = [
     { amount: 1_000, text: '1k' },
-    { amount: 2_500, text: '2.5k' },
     { amount: 5_000, text: '5k' },
     { amount: 10_000, text: '10k' },
     { amount: 25_000, text: '25k' },
     { amount: 50_000, text: '50k' },
-    { amount: 100_000, text: '100k' },
-    { amount: 250_000, text: '250k' }
+    { amount: 100_000, text: '100k' }
   ]
   const charactersPerUnit = 100 // 1 unit = 100 characters
 
@@ -72,12 +51,12 @@ export function JumbleTranslation() {
 
   const handlePresetClick = (amount: number) => {
     setSelectedAmount(amount)
-    setRechargeAmount(amount.toString())
+    setRechargeAmount(amount)
   }
 
   const handleInputChange = (value: string) => {
     const numValue = parseInt(value) || 0
-    setRechargeAmount(value)
+    setRechargeAmount(numValue)
     setSelectedAmount(numValue >= 1000 ? numValue : null)
   }
 
@@ -111,7 +90,7 @@ export function JumbleTranslation() {
 
           if (state === 'settled') {
             setPaid({ preimage: '' }) // Preimage is not returned, but we can assume payment is successful
-            setRefreshCount((prev) => prev + 1)
+            getAccount() // Refresh account balance
           } else {
             closeModal()
             toast({
@@ -162,10 +141,10 @@ export function JumbleTranslation() {
     }
   }
 
-  if (!account && !loadingAccount) {
+  if (!account) {
     return (
       <div className="w-full flex justify-center">
-        <Button onClick={() => checkLogin(() => setRefreshCount((prev) => prev + 1))}>Login</Button>
+        <Button onClick={() => startLogin()}>Login</Button>
       </div>
     )
   }
@@ -189,7 +168,7 @@ export function JumbleTranslation() {
             type={showApiKey ? 'text' : 'password'}
             value={account?.api_key ?? ''}
             readOnly
-            className="font-mono w-fit"
+            className="font-mono flex-1 max-w-fit"
           />
           <Button variant="outline" onClick={() => setShowApiKey(!showApiKey)}>
             {showApiKey ? <EyeOff /> : <Eye />}
@@ -301,7 +280,7 @@ export function JumbleTranslation() {
           {recharging && <Loader className="animate-spin" />}
           {selectedAmount && selectedAmount >= 1000
             ? 'Recharge ' + selectedAmount.toLocaleString() + ' sats'
-            : `Minimum recharge is 1,000 sats`}
+            : `Minimum recharge is ${new Number(1000).toLocaleString()} sats`}
         </Button>
       </div>
     </div>

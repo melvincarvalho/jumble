@@ -14,7 +14,7 @@ type TTranslationAccount = {
 type TTranslationServiceContext = {
   account: TTranslationAccount | null
   translate: (text: string) => Promise<string | void>
-  getAccount: () => Promise<TTranslationAccount | void>
+  getAccount: (canAuthWithApiKey?: boolean) => Promise<TTranslationAccount | void>
   regenerateApiKey: () => Promise<void>
 }
 
@@ -37,7 +37,7 @@ export function TranslationServiceProvider({ children }: { children: React.React
     setAccount(null)
   }, [pubkey])
 
-  const getAccount = async (): Promise<TTranslationAccount | void> => {
+  const getAccount = async (canAuthWithApiKey = true): Promise<TTranslationAccount | void> => {
     if (!pubkey) {
       startLogin()
       return
@@ -45,7 +45,7 @@ export function TranslationServiceProvider({ children }: { children: React.React
     const url = new URL('/v1/translation/account', JUMBLE_API_BASE_URL).toString()
 
     let auth: string
-    if (account?.api_key) {
+    if (account?.api_key && canAuthWithApiKey) {
       auth = `Bearer ${account.api_key}`
     } else {
       auth = await signHttpAuth(url, 'get')
