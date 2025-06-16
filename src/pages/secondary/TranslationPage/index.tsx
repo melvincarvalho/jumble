@@ -1,7 +1,7 @@
 import SecondaryPageLayout from '@/layouts/SecondaryPageLayout'
 import { forwardRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { JumbleTranslation } from './JumbleTranslation'
+import { JumbleTranslationService } from './JumbleTranslationService'
 
 const TranslationPage = forwardRef(({ index }: { index?: number }, ref) => {
   const { t } = useTranslation()
@@ -9,7 +9,7 @@ const TranslationPage = forwardRef(({ index }: { index?: number }, ref) => {
   return (
     <SecondaryPageLayout ref={ref} index={index} title={t('Translation')}>
       <div className="px-4 pt-2 space-y-4">
-        <JumbleTranslation />
+        <JumbleTranslationService />
       </div>
     </SecondaryPageLayout>
   )

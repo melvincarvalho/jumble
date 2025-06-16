@@ -58,7 +58,11 @@ export default function ReplyNote({
                 </div>
               </div>
               <div className="flex items-center">
-                <TranslateButton event={event} setTranslatedEvent={setTranslatedEvent} />
+                <TranslateButton
+                  event={event}
+                  translatedEvent={translatedEvent}
+                  setTranslatedEvent={setTranslatedEvent}
+                />
                 <NoteOptions event={event} className="shrink-0 [&_svg]:size-5" />
               </div>
             </div>

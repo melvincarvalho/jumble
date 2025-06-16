@@ -1,9 +1,10 @@
 import { JUMBLE_API_BASE_URL } from '@/constants'
+import { Event } from 'nostr-tools'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNostr } from './NostrProvider'
 
-const translatedTextCache: Record<string, string> = {}
+const translatedEventCache: Record<string, Event> = {}
 
 type TTranslationAccount = {
   pubkey: string
@@ -13,7 +14,9 @@ type TTranslationAccount = {
 
 type TTranslationServiceContext = {
   account: TTranslationAccount | null
-  translate: (text: string) => Promise<string | void>
+  translatedEventIdSet: Set<string>
+  translate: (event: Event) => Promise<Event | void>
+  showOriginalEvent: (eventId: string) => void
   getAccount: (canAuthWithApiKey?: boolean) => Promise<TTranslationAccount | void>
   regenerateApiKey: () => Promise<void>
 }
@@ -32,6 +35,7 @@ export function TranslationServiceProvider({ children }: { children: React.React
   const { i18n } = useTranslation()
   const { pubkey, signHttpAuth, startLogin } = useNostr()
   const [account, setAccount] = useState<TTranslationAccount | null>(null)
+  const [translatedEventIdSet, setTranslatedEventIdSet] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     setAccount(null)
@@ -89,11 +93,12 @@ export function TranslationServiceProvider({ children }: { children: React.React
     }
   }
 
-  const translate = async (text: string): Promise<string | void> => {
+  const translate = async (event: Event): Promise<Event | void> => {
     const target = i18n.language
-    const cacheKey = await generateCacheKey(text, target)
-    if (translatedTextCache[cacheKey]) {
-      return translatedTextCache[cacheKey]
+    const cacheKey = event.id + '_' + target
+    if (translatedEventCache[cacheKey]) {
+      setTranslatedEventIdSet((prev) => new Set(prev.add(event.id)))
+      return translatedEventCache[cacheKey]
     }
 
     let api_key = account?.api_key
@@ -107,30 +112,39 @@ export function TranslationServiceProvider({ children }: { children: React.React
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api_key}` },
-      body: JSON.stringify({ q: text, target })
+      body: JSON.stringify({ q: event.content, target })
     })
     const data = await response.json()
     if (!response.ok) {
       throw new Error(data.error ?? 'Failed to translate')
     }
     const translatedText = data.translatedText
-    translatedTextCache[cacheKey] = translatedText
-    return translatedText
+    const translatedEvent: Event = { ...event, content: translatedText }
+    translatedEventCache[cacheKey] = translatedEvent
+    setTranslatedEventIdSet((prev) => new Set(prev.add(event.id)))
+    return translatedEvent
+  }
+
+  const showOriginalEvent = (eventId: string) => {
+    setTranslatedEventIdSet((prev) => {
+      const newSet = new Set(prev)
+      newSet.delete(eventId)
+      return newSet
+    })
   }
 
   return (
     <TranslationServiceContext.Provider
-      value={{ account, getAccount, regenerateApiKey, translate }}
+      value={{
+        account,
+        translatedEventIdSet,
+        getAccount,
+        regenerateApiKey,
+        translate,
+        showOriginalEvent
+      }}
     >
       {children}
     </TranslationServiceContext.Provider>
   )
-}
-
-async function generateCacheKey(text: string, target: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(text + '_' + target)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
 }

@@ -14,21 +14,26 @@ import { useTranslationService } from '@/providers/TranslationServiceProvider'
 import { franc } from 'franc-min'
 import { Languages } from 'lucide-react'
 import { Event } from 'nostr-tools'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export default function TranslateButton({
   event,
+  translatedEvent,
   setTranslatedEvent
 }: {
   event: Event
+  translatedEvent: Event | null
   setTranslatedEvent: (event: Event | null) => void
 }) {
   const { i18n } = useTranslation()
   const { toast } = useToast()
-  const { translate } = useTranslationService()
+  const { translatedEventIdSet, translate, showOriginalEvent } = useTranslationService()
   const [translating, setTranslating] = useState(false)
-  const [translated, setTranslated] = useState(false)
+  const translated = useMemo(
+    () => translatedEventIdSet.has(event.id),
+    [event, translatedEventIdSet]
+  )
   const supported = useMemo(() => isSupportedKind(event.kind), [event])
 
   const needTranslation = useMemo(() => {
@@ -85,6 +90,14 @@ export default function TranslateButton({
     }
   }, [event, i18n.language])
 
+  useEffect(() => {
+    if (translated && !translatedEvent) {
+      handleTranslate()
+    } else if (!translated && translatedEvent) {
+      showOriginal()
+    }
+  }, [translated, translatedEvent])
+
   if (!supported || !needTranslation) {
     return null
   }
@@ -93,12 +106,10 @@ export default function TranslateButton({
     if (translating) return
 
     setTranslating(true)
-    await translate(event.content)
-      .then(async (translatedText) => {
-        if (translatedText) {
-          const translatedEvent = { ...event, content: translatedText }
+    await translate(event)
+      .then(async (translatedEvent) => {
+        if (translatedEvent) {
           setTranslatedEvent(translatedEvent)
-          setTranslated(true)
         }
       })
       .catch((error) => {
@@ -113,6 +124,11 @@ export default function TranslateButton({
       })
   }
 
+  const showOriginal = () => {
+    setTranslatedEvent(null)
+    showOriginalEvent(event.id)
+  }
+
   return (
     <button
       className="flex items-center text-muted-foreground hover:text-foreground pl-3 h-full"
@@ -120,8 +136,7 @@ export default function TranslateButton({
       onClick={(e) => {
         e.stopPropagation()
         if (translated) {
-          setTranslatedEvent(null)
-          setTranslated(false)
+          showOriginal()
         } else {
           handleTranslate()
         }
