@@ -7,7 +7,8 @@ import {
   TFeedInfo,
   TNoteListMode,
   TRelaySet,
-  TThemeSetting
+  TThemeSetting,
+  TTranslationServiceConfig
 } from '@/types'
 
 class LocalStorageService {
@@ -27,6 +28,7 @@ class LocalStorageService {
   private autoplay: boolean = true
   private hideUntrustedInteractions: boolean = false
   private hideUntrustedNotifications: boolean = false
+  private translationServiceConfig: TTranslationServiceConfig = { service: 'jumble' }
 
   constructor() {
     if (!LocalStorageService.instance) {
@@ -108,6 +110,13 @@ class LocalStorageService {
     this.hideUntrustedNotifications = storedHideUntrustedNotifications
       ? storedHideUntrustedNotifications === 'true'
       : hideUntrustedEvents
+
+    const translationServiceConfigStr = window.localStorage.getItem(
+      StorageKey.TRANSLATION_SERVICE_CONFIG
+    )
+    if (translationServiceConfigStr) {
+      this.translationServiceConfig = JSON.parse(translationServiceConfigStr)
+    }
 
     // Clean up deprecated data
     window.localStorage.removeItem(StorageKey.ACCOUNT_PROFILE_EVENT_MAP)
@@ -285,6 +294,15 @@ class LocalStorageService {
       StorageKey.HIDE_UNTRUSTED_NOTIFICATIONS,
       hideUntrustedNotifications.toString()
     )
+  }
+
+  getTranslationServiceConfig() {
+    return this.translationServiceConfig
+  }
+
+  setTranslationServiceConfig(config: TTranslationServiceConfig) {
+    this.translationServiceConfig = config
+    window.localStorage.setItem(StorageKey.TRANSLATION_SERVICE_CONFIG, JSON.stringify(config))
   }
 }
 

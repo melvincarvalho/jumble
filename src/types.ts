@@ -127,3 +127,13 @@ export type TTranslationAccount = {
   api_key: string
   balance: number
 }
+
+export type TTranslationServiceConfig =
+  | {
+      service: 'jumble'
+    }
+  | {
+      service: 'libre_translate'
+      server?: string
+      api_key?: string
+    }

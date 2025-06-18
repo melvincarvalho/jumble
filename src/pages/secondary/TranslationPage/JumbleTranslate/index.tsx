@@ -8,7 +8,7 @@ import { useState } from 'react'
 import TopUp from './TopUp'
 import RegenerateApiKeyButton from './RegenerateApiKeyButton'
 
-export function JumbleTranslationService() {
+export function JumbleTranslate() {
   const { pubkey, startLogin } = useNostr()
   const { account } = useTranslationService()
   const [showApiKey, setShowApiKey] = useState(false)
