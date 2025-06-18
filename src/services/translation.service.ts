@@ -51,7 +51,7 @@ class TranslationService {
     })
     const data = await response.json()
     if (!response.ok) {
-      if (data.code === '00429' && !!api_key) {
+      if (data.code === '00403' && !!api_key) {
         return this.regenerateApiKey(signHttpAuth)
       }
       throw new Error(data.error ?? 'Failed to regenerate API key')
@@ -80,7 +80,7 @@ class TranslationService {
     })
     const data = await response.json()
     if (!response.ok) {
-      if (data.code === '00429' && !!api_key) {
+      if (data.code === '00403' && !!api_key) {
         return this.translate(text, target, signHttpAuth)
       }
       throw new Error(data.error ?? 'Failed to translate')
