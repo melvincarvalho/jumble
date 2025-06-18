@@ -8,11 +8,11 @@ import { closeModal, launchPaymentModal } from '@getalby/bitcoin-connect-react'
 import { Loader } from 'lucide-react'
 import { useState } from 'react'
 
-export default function Recharge() {
+export default function TopUp() {
   const { toast } = useToast()
   const { account, getAccount } = useTranslationService()
-  const [recharging, setRecharging] = useState(false)
-  const [rechargeAmount, setRechargeAmount] = useState(1000)
+  const [topUpLoading, setTopUpLoading] = useState(false)
+  const [topUpAmount, setTopUpAmount] = useState(1000)
   const [selectedAmount, setSelectedAmount] = useState<number | null>(1000)
 
   const presetAmounts = [
@@ -31,19 +31,19 @@ export default function Recharge() {
 
   const handlePresetClick = (amount: number) => {
     setSelectedAmount(amount)
-    setRechargeAmount(amount)
+    setTopUpAmount(amount)
   }
 
   const handleInputChange = (value: string) => {
     const numValue = parseInt(value) || 0
-    setRechargeAmount(numValue)
+    setTopUpAmount(numValue)
     setSelectedAmount(numValue >= 1000 ? numValue : null)
   }
 
-  const handleRecharge = async (amount: number | null) => {
-    if (recharging || !account || !amount || amount < 1000) return
+  const handleTopUp = async (amount: number | null) => {
+    if (topUpLoading || !account || !amount || amount < 1000) return
 
-    setRecharging(true)
+    setTopUpLoading(true)
     try {
       const { transactionId, invoiceId } = await transaction.createTransaction(
         account.pubkey,
@@ -55,7 +55,7 @@ export default function Recharge() {
         invoice: invoiceId,
         onCancelled: () => {
           clearInterval(checkPaymentInterval)
-          setRecharging(false)
+          setTopUpLoading(false)
         }
       })
 
@@ -66,7 +66,7 @@ export default function Recharge() {
           if (state === 'pending') return
 
           clearInterval(checkPaymentInterval)
-          setRecharging(false)
+          setTopUpLoading(false)
 
           if (state === 'settled') {
             setPaid({ preimage: '' }) // Preimage is not returned, but we can assume payment is successful
@@ -84,19 +84,19 @@ export default function Recharge() {
           if (failedCount <= 3) return
 
           clearInterval(checkPaymentInterval)
-          setRecharging(false)
+          setTopUpLoading(false)
           toast({
-            title: 'Recharge Failed',
-            description: err instanceof Error ? err.message : 'An error occurred while recharging',
+            title: 'Top up Failed',
+            description: err instanceof Error ? err.message : 'An error occurred while topping up',
             variant: 'destructive'
           })
         }
       }, 2000)
     } catch (err) {
-      setRecharging(false)
+      setTopUpLoading(false)
       toast({
-        title: 'Recharge Failed',
-        description: err instanceof Error ? err.message : 'An error occurred while recharging',
+        title: 'Top up Failed',
+        description: err instanceof Error ? err.message : 'An error occurred while topping up',
         variant: 'destructive'
       })
     }
@@ -104,7 +104,7 @@ export default function Recharge() {
 
   return (
     <div className="space-y-4">
-      <p className="font-medium">Recharge</p>
+      <p className="font-medium">Top up</p>
 
       {/* Preset amounts */}
       <div className="grid grid-cols-2 gap-2">
@@ -132,7 +132,7 @@ export default function Recharge() {
           <Input
             type="number"
             placeholder="Custom amount"
-            value={rechargeAmount}
+            value={topUpAmount}
             onChange={(e) => handleInputChange(e.target.value)}
             min={1000}
             className="w-40"
@@ -148,13 +148,13 @@ export default function Recharge() {
 
       <Button
         className="w-full"
-        disabled={recharging || !selectedAmount || selectedAmount < 1000}
-        onClick={() => handleRecharge(selectedAmount)}
+        disabled={topUpLoading || !selectedAmount || selectedAmount < 1000}
+        onClick={() => handleTopUp(selectedAmount)}
       >
-        {recharging && <Loader className="animate-spin" />}
+        {topUpLoading && <Loader className="animate-spin" />}
         {selectedAmount && selectedAmount >= 1000
-          ? 'Recharge ' + selectedAmount.toLocaleString() + ' sats'
-          : `Minimum recharge is ${new Number(1000).toLocaleString()} sats`}
+          ? 'Top up ' + selectedAmount.toLocaleString() + ' sats'
+          : `Minimum top up is ${new Number(1000).toLocaleString()} sats`}
       </Button>
     </div>
   )

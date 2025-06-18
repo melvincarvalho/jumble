@@ -5,7 +5,7 @@ import { useNostr } from '@/providers/NostrProvider'
 import { useTranslationService } from '@/providers/TranslationServiceProvider'
 import { Check, Copy, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
-import Recharge from './Recharge'
+import TopUp from './TopUp'
 import RegenerateApiKeyButton from './RegenerateApiKeyButton'
 
 export function JumbleTranslationService() {
@@ -64,7 +64,7 @@ export function JumbleTranslationService() {
           This API is compatible with LibreTranslate. Service URL: {JUMBLE_API_BASE_URL}
         </p>
       </div>
-      <Recharge />
+      <TopUp />
       <div className="h-40" />
     </div>
   )

@@ -26,7 +26,7 @@ class TransactionService {
       body: JSON.stringify({
         pubkey,
         amount,
-        description: 'Recharge for Jumble translation service',
+        description: 'Top up for Jumble translation service',
         purpose: 'translation'
       })
     })
