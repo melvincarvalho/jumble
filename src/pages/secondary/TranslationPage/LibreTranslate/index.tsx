@@ -28,27 +28,29 @@ export default function LibreTranslate() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label>
-          Server Address:
-          <Input
-            type="text"
-            value={server}
-            onChange={(e) => setServer(e.target.value)}
-            placeholder="Enter server address"
-          />
+      <div className="space-y-2">
+        <Label htmlFor="libre-translate-server" className="text-base">
+          Server Address
         </Label>
+        <Input
+          id="libre-translate-server"
+          type="text"
+          value={server}
+          onChange={(e) => setServer(e.target.value)}
+          placeholder="Enter server address"
+        />
       </div>
-      <div>
-        <Label>
-          API Key:
-          <Input
-            type="text"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Enter API Key"
-          />
+      <div className="space-y-2">
+        <Label htmlFor="libre-translate-api-key" className="text-base">
+          API Key
         </Label>
+        <Input
+          id="libre-translate-api-key"
+          type="text"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="Enter API Key"
+        />
       </div>
     </div>
   )

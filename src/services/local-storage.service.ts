@@ -28,7 +28,7 @@ class LocalStorageService {
   private autoplay: boolean = true
   private hideUntrustedInteractions: boolean = false
   private hideUntrustedNotifications: boolean = false
-  private translationServiceConfig: TTranslationServiceConfig = { service: 'jumble' }
+  private translationServiceConfigMap: Record<string, TTranslationServiceConfig> = {}
 
   constructor() {
     if (!LocalStorageService.instance) {
@@ -111,11 +111,11 @@ class LocalStorageService {
       ? storedHideUntrustedNotifications === 'true'
       : hideUntrustedEvents
 
-    const translationServiceConfigStr = window.localStorage.getItem(
-      StorageKey.TRANSLATION_SERVICE_CONFIG
+    const translationServiceConfigMapStr = window.localStorage.getItem(
+      StorageKey.TRANSLATION_SERVICE_CONFIG_MAP
     )
-    if (translationServiceConfigStr) {
-      this.translationServiceConfig = JSON.parse(translationServiceConfigStr)
+    if (translationServiceConfigMapStr) {
+      this.translationServiceConfigMap = JSON.parse(translationServiceConfigMapStr)
     }
 
     // Clean up deprecated data
@@ -296,13 +296,13 @@ class LocalStorageService {
     )
   }
 
-  getTranslationServiceConfig() {
-    return this.translationServiceConfig
+  getTranslationServiceConfig(pubkey?: string | null) {
+    return this.translationServiceConfigMap[pubkey ?? '_'] ?? { service: 'jumble' }
   }
 
-  setTranslationServiceConfig(config: TTranslationServiceConfig) {
-    this.translationServiceConfig = config
-    window.localStorage.setItem(StorageKey.TRANSLATION_SERVICE_CONFIG, JSON.stringify(config))
+  setTranslationServiceConfig(config: TTranslationServiceConfig, pubkey?: string | null) {
+    this.translationServiceConfigMap[pubkey ?? '_'] = config
+    window.localStorage.setItem(StorageKey.TRANSLATION_SERVICE_CONFIG_MAP, JSON.stringify(config))
   }
 }
 

@@ -104,7 +104,7 @@ export default function TopUp() {
 
   return (
     <div className="space-y-4">
-      <p className="font-medium">Top up</p>
+      <p className="font-medium">Top Up</p>
 
       {/* Preset amounts */}
       <div className="grid grid-cols-2 gap-2">

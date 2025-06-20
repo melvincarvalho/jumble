@@ -18,7 +18,7 @@ export const StorageKey = {
   AUTOPLAY: 'autoplay',
   HIDE_UNTRUSTED_INTERACTIONS: 'hideUntrustedInteractions',
   HIDE_UNTRUSTED_NOTIFICATIONS: 'hideUntrustedNotifications',
-  TRANSLATION_SERVICE_CONFIG: 'translationServiceConfig',
+  TRANSLATION_SERVICE_CONFIG_MAP: 'translationServiceConfigMap',
   HIDE_UNTRUSTED_EVENTS: 'hideUntrustedEvents', // deprecated
   ACCOUNT_RELAY_LIST_EVENT_MAP: 'accountRelayListEventMap', // deprecated
   ACCOUNT_FOLLOW_LIST_EVENT_MAP: 'accountFollowListEventMap', // deprecated

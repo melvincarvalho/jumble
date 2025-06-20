@@ -3,7 +3,7 @@ import storage from '@/services/local-storage.service'
 import translation from '@/services/translation.service'
 import { TTranslationAccount, TTranslationServiceConfig } from '@/types'
 import { Event } from 'nostr-tools'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNostr } from './NostrProvider'
 
@@ -15,7 +15,7 @@ type TTranslationServiceContext = {
   translatedEventIdSet: Set<string>
   translate: (event: Event) => Promise<Event | void>
   showOriginalEvent: (eventId: string) => void
-  getAccount: (canAuthWithApiKey?: boolean) => Promise<TTranslationAccount | void>
+  getAccount: () => Promise<TTranslationAccount | void>
   regenerateApiKey: () => Promise<void>
   updateConfig: (newConfig: TTranslationServiceConfig) => void
 }
@@ -32,23 +32,16 @@ export const useTranslationService = () => {
 
 export function TranslationServiceProvider({ children }: { children: React.ReactNode }) {
   const { i18n } = useTranslation()
-  const [config, setConfig] = useState<TTranslationServiceConfig>(() =>
-    storage.getTranslationServiceConfig()
-  )
+  const [config, setConfig] = useState<TTranslationServiceConfig>({ service: 'jumble' })
   const { pubkey, signHttpAuth, startLogin } = useNostr()
-  const [account, setAccount] = useState<TTranslationAccount | null>(null)
+  const [accountMap, setAccountMap] = useState<Record<string, TTranslationAccount | null>>({})
+  const account = useMemo(() => (pubkey ? accountMap[pubkey] : null), [accountMap, pubkey])
   const [translatedEventIdSet, setTranslatedEventIdSet] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    setAccount(null)
-    if (config.service !== 'jumble') return
-
-    const init = async () => {
-      const act = await translation.getAccount(signHttpAuth)
-      setAccount(act)
-    }
-    init()
-  }, [pubkey, config])
+    const config = storage.getTranslationServiceConfig(pubkey)
+    setConfig(config)
+  }, [pubkey])
 
   const getAccount = async (): Promise<TTranslationAccount | void> => {
     if (config.service !== 'jumble') return
@@ -57,7 +50,11 @@ export function TranslationServiceProvider({ children }: { children: React.React
       return
     }
     const act = await translation.getAccount(signHttpAuth, account?.api_key)
-    setAccount(act)
+    setAccountMap((prev) => {
+      const newMap = { ...prev }
+      newMap[pubkey] = act
+      return newMap
+    })
     return act
   }
 
@@ -69,16 +66,24 @@ export function TranslationServiceProvider({ children }: { children: React.React
     }
     const newApiKey = await translation.regenerateApiKey(signHttpAuth, account?.api_key)
     if (newApiKey) {
-      setAccount((prev) => {
-        if (prev) {
-          return { ...prev, api_key: newApiKey }
+      setAccountMap((prev) => {
+        const newMap = { ...prev }
+        if (newMap[pubkey]) {
+          newMap[pubkey] = { ...newMap[pubkey], api_key: newApiKey }
+        } else {
+          newMap[pubkey] = { pubkey, api_key: newApiKey, balance: 0 }
         }
-        return prev
+        return newMap
       })
     }
   }
 
   const translate = async (event: Event): Promise<Event | void> => {
+    if (config.service === 'jumble' && !pubkey) {
+      startLogin()
+      return
+    }
+
     const target = i18n.language
     const cacheKey = event.id + '_' + target
     if (translatedEventCache[cacheKey]) {
@@ -109,7 +114,7 @@ export function TranslationServiceProvider({ children }: { children: React.React
 
   const updateConfig = (newConfig: TTranslationServiceConfig) => {
     setConfig(newConfig)
-    storage.setTranslationServiceConfig(newConfig)
+    storage.setTranslationServiceConfig(newConfig, pubkey)
   }
 
   return (
