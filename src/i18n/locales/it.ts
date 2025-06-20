@@ -243,6 +243,9 @@ export default {
     'Followed by': 'Seguito da',
     'Mute user privately': 'Zittisci utente privatamente',
     'Mute user publicly': 'Zittisci utente pubblicamente',
-    Quotes: 'Citazioni'
+    Quotes: 'Citazioni',
+    'Lightning Invoice': 'Fattura Lightning',
+    'Bookmark failed': 'Impossibile aggiungere segnalibro',
+    'Remove bookmark failed': 'Impossibile rimuovere segnalibro'
   }
 }

@@ -242,6 +242,9 @@ export default {
     'Followed by': 'Obserwowany przez',
     'Mute user privately': 'Zablokuj użytkownika prywatnie',
     'Mute user publicly': 'Zablokuj użytkownika publicznie',
-    Quotes: 'Cytaty'
+    Quotes: 'Cytaty',
+    'Lightning Invoice': 'Faktura Lightning',
+    'Bookmark failed': 'Nie udało się dodać zakładki',
+    'Remove bookmark failed': 'Nie udało się usunąć zakładki'
   }
 }

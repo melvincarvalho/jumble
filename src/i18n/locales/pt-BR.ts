@@ -242,6 +242,9 @@ export default {
     'Followed by': 'Seguido por',
     'Mute user privately': 'Silenciar usuário privadamente',
     'Mute user publicly': 'Silenciar usuário publicamente',
-    Quotes: 'Citações'
+    Quotes: 'Citações',
+    'Lightning Invoice': 'Fatura Lightning',
+    'Bookmark failed': 'Falha ao favoritar',
+    'Remove bookmark failed': 'Falha ao remover favorito'
   }
 }
