@@ -8,13 +8,12 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog'
-import { useToast } from '@/hooks'
 import { useTranslationService } from '@/providers/TranslationServiceProvider'
 import { Loader, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 export default function RegenerateApiKeyButton() {
-  const { toast } = useToast()
   const { account, regenerateApiKey } = useTranslationService()
   const [resettingApiKey, setResettingApiKey] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
@@ -27,12 +26,10 @@ export default function RegenerateApiKeyButton() {
       await regenerateApiKey()
       setShowResetDialog(false)
     } catch (error) {
-      toast({
-        title: 'Failed to Reset API Key',
-        description:
-          error instanceof Error ? error.message : 'An error occurred while resetting the API key',
-        variant: 'destructive'
-      })
+      toast.error(
+        'Failed to Reset API Key: ' +
+          (error instanceof Error ? error.message : 'An error occurred while resetting the API key')
+      )
     } finally {
       setResettingApiKey(false)
     }

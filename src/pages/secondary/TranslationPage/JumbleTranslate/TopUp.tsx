@@ -1,15 +1,14 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useToast } from '@/hooks'
 import { cn } from '@/lib/utils'
 import { useTranslationService } from '@/providers/TranslationServiceProvider'
 import transaction from '@/services/transaction.service'
 import { closeModal, launchPaymentModal } from '@getalby/bitcoin-connect-react'
 import { Loader } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 export default function TopUp() {
-  const { toast } = useToast()
   const { account, getAccount } = useTranslationService()
   const [topUpLoading, setTopUpLoading] = useState(false)
   const [topUpAmount, setTopUpAmount] = useState(1000)
@@ -73,11 +72,7 @@ export default function TopUp() {
             getAccount() // Refresh account balance
           } else {
             closeModal()
-            toast({
-              title: 'Invoice Expired',
-              description: 'The invoice has expired or the payment was not successful.',
-              variant: 'destructive'
-            })
+            toast.error('The invoice has expired or the payment was not successful')
           }
         } catch (err) {
           failedCount++
@@ -85,20 +80,18 @@ export default function TopUp() {
 
           clearInterval(checkPaymentInterval)
           setTopUpLoading(false)
-          toast({
-            title: 'Top up Failed',
-            description: err instanceof Error ? err.message : 'An error occurred while topping up',
-            variant: 'destructive'
-          })
+          toast.error(
+            'Top up failed: ' +
+              (err instanceof Error ? err.message : 'An error occurred while topping up')
+          )
         }
       }, 2000)
     } catch (err) {
       setTopUpLoading(false)
-      toast({
-        title: 'Top up Failed',
-        description: err instanceof Error ? err.message : 'An error occurred while topping up',
-        variant: 'destructive'
-      })
+      toast.error(
+        'Top up failed: ' +
+          (err instanceof Error ? err.message : 'An error occurred while topping up')
+      )
     }
   }
 

@@ -7,7 +7,6 @@ import {
   URL_REGEX,
   WS_URL_REGEX
 } from '@/constants'
-import { useToast } from '@/hooks'
 import { isSupportedKind } from '@/lib/event'
 import { toTranslation } from '@/lib/link'
 import { cn } from '@/lib/utils'
@@ -18,6 +17,7 @@ import { Languages } from 'lucide-react'
 import { Event } from 'nostr-tools'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 export default function TranslateButton({
   event,
@@ -29,7 +29,6 @@ export default function TranslateButton({
   setTranslatedEvent: (event: Event | null) => void
 }) {
   const { i18n } = useTranslation()
-  const { toast } = useToast()
   const { push } = useSecondaryPage()
   const { translatedEventIdSet, translate, showOriginalEvent } = useTranslationService()
   const [translating, setTranslating] = useState(false)
@@ -116,11 +115,9 @@ export default function TranslateButton({
         }
       })
       .catch((error) => {
-        toast({
-          title: 'Translation failed',
-          description: error.message || 'An error occurred while translating the note.',
-          variant: 'destructive'
-        })
+        toast.error(
+          'Translation failed: ' + (error.message || 'An error occurred while translating the note')
+        )
         if (error.message === 'Insufficient balance.') {
           push(toTranslation())
         }
