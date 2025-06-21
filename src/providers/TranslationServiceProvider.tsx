@@ -5,6 +5,7 @@ import { TTranslationAccount, TTranslationServiceConfig } from '@/types'
 import { Event } from 'nostr-tools'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { useNostr } from './NostrProvider'
 
 const translatedEventCache: Record<string, Event> = {}
@@ -91,9 +92,19 @@ export function TranslationServiceProvider({ children }: { children: React.React
       return translatedEventCache[cacheKey]
     }
 
+    let apiKey = account?.api_key
+    if (config.service === 'jumble' && !apiKey) {
+      const act = await getAccount()
+      if (!act) {
+        toast.error('Failed to get translation account. Please try again.')
+        return
+      }
+      apiKey = act.api_key
+    }
+
     const translatedText =
       config.service === 'jumble'
-        ? await translation.translate(event.content, target, signHttpAuth, account?.api_key)
+        ? await translation.translate(event.content, target, signHttpAuth, apiKey)
         : await libreTranslate.translate(event.content, target, config.server, config.api_key)
     if (!translatedText) {
       return
